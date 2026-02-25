@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎂 Bernard's Birthday Adventure!</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --navy:#1a2744;--blue:#2d6ab4;--sky:#69b4ff;
+  --cream:#fff9f0;--warm:#ffe8b0;--green:#3daa70;
+  --red:#e05252;--gold:#f5a623;--cell:52px;
+}
+body{
+  font-family:'Nunito',sans-serif;
+  background:linear-gradient(150deg,#0c1830 0%,#1a3a6a 60%,#0c2348 100%);
+  min-height:100vh;display:flex;justify-content:center;
+  align-items:flex-start;padding:24px 14px;
+}
+.wrap{
+  background:var(--cream);border-radius:26px;
+  padding:30px 26px;
+  box-shadow:0 28px 70px rgba(0,0,0,.55),0 0 0 2.5px rgba(105,180,255,.25);
+  max-width:820px;width:100%;
+}
+h1{font-family:'Fredoka One',cursive;text-align:center;color:var(--navy);font-size:27px;margin-bottom:5px}
+.dots{display:flex;justify-content:center;gap:7px;margin-bottom:20px}
+.dot{width:9px;height:9px;border-radius:50%;background:#ddd;transition:background .3s}
+.dot.on{background:var(--gold)}.dot.done{background:var(--green)}
+.stage{display:none}
+.stage.active{display:block;animation:fu .4s ease}
+@keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.instr{background:#fff;padding:13px 17px;border-radius:13px;margin-bottom:18px;
+  border-left:5px solid var(--blue);font-size:13.5px;line-height:1.7;color:#333;
+  box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.instr strong{color:var(--navy)}
+.btn{background:var(--navy);color:#fff;padding:12px 28px;border:none;border-radius:13px;
+  font-size:15px;font-family:'Nunito',sans-serif;font-weight:700;cursor:pointer;
+  transition:all .2s;display:block;margin:16px auto 0}
+.btn:hover:not(:disabled){background:#0e1c34;transform:translateY(-2px);box-shadow:0 5px 16px rgba(0,0,0,.2)}
+.btn:disabled{background:#bbb;cursor:not-allowed}
+.prog-wrap{margin-top:12px}
+.prog-label{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:4px;text-align:center}
+.prog-bar{width:100%;height:9px;background:#e0e0e0;border-radius:5px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--sky));border-radius:5px;transition:width .35s ease}
+
+/* ══ STAGE 1 — Crossword ══ */
+.cw-layout{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap}
+.cw-grid{border-collapse:collapse;border:3px solid var(--navy);flex-shrink:0}
+.cw-grid td{
+  width:var(--cell);height:var(--cell);
+  border:1.5px solid var(--navy);padding:0;position:relative;
+  font-size:20px;font-weight:800;color:var(--navy);
+  text-align:center;vertical-align:middle;
+  cursor:pointer;user-select:none;background:#fff;transition:background .1s;
+}
+.cw-grid td.blk{background:var(--navy);cursor:default;border-color:var(--navy)}
+.cw-grid td.sel{background:#FFD700;border:3px solid #e09400;z-index:1;position:relative}
+.cw-grid td.sel-w{background:#FFF0A0;border:2px solid #f5c800}
+.cw-grid td.ok{background:#e6f8ee;color:var(--green);cursor:default}
+.cw-grid td:not(.blk):not(.ok):hover{background:#eef5ff}
+.cw-num{position:absolute;top:2px;left:3px;font-size:8.5px;font-weight:700;color:#777;line-height:1;font-family:'Nunito',sans-serif}
+.cw-grid td.ok .cw-num{color:rgba(61,170,112,.55)}
+.clue-bar{background:#fff8d0;border:2px solid var(--gold);border-radius:11px;
+  padding:9px 13px;margin-bottom:12px;font-size:13.5px;min-height:44px;
+  display:flex;align-items:center;gap:9px;color:var(--navy);font-weight:600}
+.dbadge{background:var(--gold);color:#fff;font-size:9.5px;font-weight:800;
+  padding:2px 6px;border-radius:5px;flex-shrink:0;text-transform:uppercase}
+.cpanel{flex:1;min-width:170px}
+.csec{font-family:'Fredoka One',cursive;font-size:12.5px;color:var(--blue);
+  letter-spacing:.8px;margin:10px 0 4px}
+.csec:first-child{margin-top:0}
+.ci{font-size:12.5px;line-height:1.5;padding:4px 8px;border-radius:7px;
+  cursor:pointer;color:#444;transition:background .1s}
+.ci:hover{background:#eef4ff}
+.ci.sel{background:#fff8d0;font-weight:700;color:var(--navy)}
+.ci.done{color:var(--green);text-decoration:line-through;opacity:.6;cursor:default}
+.ci .cn{font-weight:800;margin-right:2px;color:var(--navy)}
+.lpool{display:flex;justify-content:center;gap:6px;margin:12px 0 8px;flex-wrap:wrap}
+.lbtn{width:36px;height:36px;background:#fff;border:2px solid var(--navy);border-radius:50%;
+  font-size:14px;font-weight:800;color:var(--navy);cursor:pointer;
+  font-family:'Nunito',sans-serif;transition:all .15s}
+.lbtn:hover{background:var(--warm);transform:scale(1.1)}
+.inp-row{display:flex;gap:9px;margin-top:7px;max-width:320px;margin-left:auto;margin-right:auto}
+.inp-row input{flex:1;padding:10px 12px;font-size:19px;font-weight:800;
+  font-family:'Nunito',sans-serif;border:3px solid var(--navy);border-radius:11px;
+  text-transform:uppercase;text-align:center;letter-spacing:4px;background:#fff;color:var(--navy);transition:border-color .2s}
+.inp-row input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(245,166,35,.18)}
+.inp-row input.err{border-color:var(--red);animation:shk .28s}
+@keyframes shk{0%,100%{transform:translateX(0)}30%{transform:translateX(-5px)}70%{transform:translateX(5px)}}
+.bok{width:48px;height:48px;background:var(--green);color:#fff;border:none;
+  border-radius:11px;font-size:20px;cursor:pointer;transition:all .2s;flex-shrink:0}
+.bok:hover{background:#329f60;transform:scale(1.06)}
+
+/* ══ STAGE 2 — Math ══ */
+.mgrid{display:flex;flex-direction:column;gap:12px;margin:14px 0}
+.mrow{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;
+  background:#fff;padding:11px 14px;border-radius:13px;box-shadow:0 2px 7px rgba(0,0,0,.06)}
+.mimg{width:50px;height:50px;object-fit:cover;border-radius:9px;border:2px solid #e4e4e4}
+.mop{font-size:21px;font-weight:800;color:var(--navy)}
+.mres{font-size:22px;font-weight:800;color:var(--blue);min-width:38px;text-align:center}
+.minp{width:76px;padding:6px 8px;font-size:19px;font-weight:800;
+  font-family:'Nunito',sans-serif;border:3px solid var(--navy);border-radius:9px;text-align:center;color:var(--navy)}
+.minp:focus{outline:none;border-color:var(--gold)}
+.mfb{text-align:center;font-size:14px;font-weight:700;margin-top:10px;min-height:20px}
+
+/* ══ STAGE 3 — Sudoku ══ */
+.sdk-wrap{display:flex;flex-direction:column;align-items:center;gap:16px;margin:16px 0}
+.sdk-grid{border-collapse:collapse;border:3px solid var(--navy)}
+.sdk-grid td{
+  width:44px;height:44px;border:1px solid #aaa;
+  text-align:center;vertical-align:middle;
+  font-size:18px;font-weight:700;color:var(--navy);
+  padding:0;cursor:pointer;user-select:none;background:#fff;
+  transition:background .1s;
+}
+.sdk-grid td.given{color:var(--navy);font-weight:800;cursor:default;background:#f0f4fa}
+.sdk-grid td.sel{background:#fff5cc !important}
+.sdk-grid td.hi{background:#f5faff}
+.sdk-grid td.conflict{color:var(--red) !important}
+.sdk-grid td.ok-cell{color:var(--green)}
+.sdk-grid .box-r{border-right:3px solid var(--navy)}
+.sdk-grid .box-b{border-bottom:3px solid var(--navy)}
+.sdk-numpad{display:grid;grid-template-columns:repeat(9,1fr);gap:6px;max-width:400px;width:100%}
+.sdk-num{height:40px;background:#fff;border:2px solid var(--navy);border-radius:9px;
+  font-size:17px;font-weight:800;color:var(--navy);cursor:pointer;
+  font-family:'Nunito',sans-serif;transition:all .15s}
+.sdk-num:hover{background:var(--warm);transform:scale(1.05)}
+.sdk-num.erase{font-size:13px;background:#fff0f0;border-color:var(--red);color:var(--red)}
+.sdk-status{font-size:13px;font-weight:700;color:var(--navy);text-align:center;min-height:20px}
+
+/* ══ STAGE 4 — Cryptogram ══ */
+.msg-box{background:var(--navy);border-radius:15px;padding:18px 16px;margin:16px 0}
+.msg-title{font-family:'Fredoka One',cursive;color:var(--sky);font-size:11.5px;
+  letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px}
+.msg-words{display:flex;flex-wrap:wrap;gap:14px;justify-content:center}
+.msg-word{display:flex;gap:3px}
+.msg-lbox{display:flex;flex-direction:column;align-items:center;gap:2px}
+.msg-blank{width:24px;height:30px;background:rgba(255,255,255,.08);
+  border-bottom:3px solid rgba(255,255,255,.3);border-radius:3px 3px 0 0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:800;color:#fff;transition:all .3s}
+.msg-blank.lit{background:rgba(255,255,255,.14);border-bottom-color:var(--green);
+  color:#70ffb8;animation:pop .38s cubic-bezier(.34,1.56,.64,1)}
+@keyframes pop{0%{transform:scale(.4);opacity:0}100%{transform:scale(1);opacity:1}}
+.msg-num{font-size:10px;font-weight:800;color:rgba(255,255,255,.45);line-height:1;text-align:center}
+.decoder{background:#fff;border-radius:11px;padding:10px 14px;margin:10px 0;
+  display:none;box-shadow:0 2px 7px rgba(0,0,0,.06)}
+.dec-title{font-size:10.5px;font-weight:800;color:var(--blue);letter-spacing:1px;text-transform:uppercase;margin-bottom:7px}
+.dec-chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{background:var(--warm);border:2px solid var(--gold);border-radius:7px;
+  padding:3px 8px;font-size:12px;font-weight:700;color:var(--navy);
+  animation:pop .28s cubic-bezier(.34,1.56,.64,1)}
+.chip span{color:var(--blue)}
+.qblock{background:#fff;padding:11px 14px;border-radius:11px;margin-bottom:9px;
+  border:2px solid #e4e4e4;box-shadow:0 2px 5px rgba(0,0,0,.04);transition:border-color .2s}
+.qblock.answered{border-color:var(--green)}
+.qblock label{font-size:13px;font-weight:700;color:var(--navy);display:block;margin-bottom:6px}
+.ubadge{display:inline-block;font-size:9.5px;background:var(--warm);color:var(--navy);
+  padding:2px 6px;border-radius:20px;font-weight:700;margin-left:4px}
+.qinp{width:100%;padding:7px 10px;font-size:13.5px;font-weight:700;
+  font-family:'Nunito',sans-serif;border:2px solid #ddd;border-radius:7px;
+  text-transform:uppercase;color:var(--navy);transition:border-color .2s}
+.qinp:focus{outline:none;border-color:var(--blue)}
+.qinp.answered{border-color:var(--green);background:#f0fff6;color:var(--green)}
+
+/* ══ Fireworks overlay ══ */
+#fw-overlay{
+  display:none;position:fixed;inset:0;z-index:999;
+  background:rgba(10,20,50,.92);
+  flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;
+}
+#fw-overlay.show{display:flex}
+#fw-canvas{position:absolute;inset:0;pointer-events:none}
+.fw-msg{position:relative;z-index:2;color:#fff}
+.fw-msg h2{font-family:'Fredoka One',cursive;font-size:36px;color:var(--gold);
+  text-shadow:0 0 30px rgba(245,166,35,.7);margin-bottom:12px;
+  animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+.fw-msg p{font-size:17px;font-weight:700;color:#cce0ff;line-height:1.7;margin-bottom:24px}
+.fw-msg .decoded-final{
+  font-family:'Fredoka One',cursive;font-size:22px;color:#fff;
+  background:rgba(255,255,255,.12);border-radius:12px;padding:12px 24px;
+  margin-bottom:20px;letter-spacing:1px;
+}
+.fw-btn{background:var(--gold);color:var(--navy);border:none;border-radius:14px;
+  padding:13px 30px;font-size:16px;font-weight:800;font-family:'Nunito',sans-serif;
+  cursor:pointer;transition:all .2s}
+.fw-btn:hover{background:#e09400;transform:scale(1.04)}
+
+@media(max-width:560px){
+  :root{--cell:40px}
+  .wrap{padding:18px 14px}
+  h1{font-size:21px}
+  .cw-layout{flex-direction:column}
+  .cw-grid td{font-size:16px}
+  .sdk-grid td{width:36px;height:36px;font-size:15px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎂 Bernard's Birthday Adventure!</h1>
+  <div class="dots">
+    <div class="dot on" id="d1"></div><div class="dot" id="d2"></div>
+    <div class="dot" id="d3"></div><div class="dot" id="d4"></div>
+  </div>
+
+  <!-- ══════ STAGE 1 — Crossword ══════ -->
+  <div class="stage active" id="s1">
+    <div class="instr">
+      <strong>🔤 Guess the Word!</strong><br>
+      All words can be formed from the letters in <strong>B·E·R·N·A·R·D</strong>.
+      Click a box or clue to select a word, then type your answer!
+    </div>
+    <div class="clue-bar" id="clueBar"><span style="color:#bbb;font-weight:400">👆 Click a box or clue to start</span></div>
+    <div class="cw-layout">
+      <table class="cw-grid" id="cwGrid"></table>
+      <div class="cpanel">
+        <div class="csec">↔ ACROSS</div><div id="clA"></div>
+        <div class="csec">↕ DOWN</div><div id="clD"></div>
+      </div>
+    </div>
+    <div class="lpool" id="lpool"></div>
+    <div class="inp-row">
+      <input type="text" id="wInp" placeholder="TYPE…" autocomplete="off" spellcheck="false">
+      <button class="bok" onclick="submitWord()">✓</button>
+    </div>
+    <div class="prog-wrap">
+      <div class="prog-label">Words filled: <span id="sc">0</span> / 8</div>
+      <div class="prog-bar"><div class="prog-fill" id="p1" style="width:0%"></div></div>
+    </div>
+    <button class="btn" id="nb1" onclick="goS2()" disabled>🎯 Next Stage →</button>
+  </div>
+
+  <!-- ══════ STAGE 2 — Picture Math ══════ -->
+  <div class="stage" id="s2">
+    <div class="instr">
+      <strong>🧮 Picture Math Puzzle</strong><br>
+      Figure out the value of each image from the equations above, then solve the last one!
+      Remember: <strong>× before +</strong>
+    </div>
+    <div class="mgrid" id="mathGrid"></div>
+    <div class="mfb" id="mathFb"></div>
+    <button class="btn" onclick="checkMath()">✓ Check Answer</button>
+    <button class="btn" id="nb2" onclick="goS3()" disabled style="margin-top:8px">🎯 Next Stage →</button>
+  </div>
+
+  <!-- ══════ STAGE 3 — Sudoku ══════ -->
+  <div class="stage" id="s3">
+    <div class="instr">
+      <strong>🔢 Sudoku — Hard Level</strong><br>
+      Fill the 9×9 grid so every row, column, and 3×3 box contains digits 1–9.
+      Click a cell, then tap a number. Good luck! 🧠
+    </div>
+    <div class="sdk-wrap">
+      <div class="sdk-status" id="sdkStatus">Select a cell to start</div>
+      <table class="sdk-grid" id="sdkGrid"></table>
+      <div class="sdk-numpad" id="sdkNumpad"></div>
+    </div>
+    <button class="btn" id="nb3" onclick="goS4()" disabled>🎯 Next Stage →</button>
+  </div>
+
+  <!-- ══════ STAGE 4 — Cryptogram ══════ -->
+  <div class="stage" id="s4">
+    <div class="instr">
+      <strong>🔐 Cryptogram Challenge</strong><br>
+      Answer all questions about Bernard. Each correct answer
+      <strong>reveals letters</strong> in the secret message!
+      The number below each box = the letter's position in one of the answers.
+    </div>
+    <div class="msg-box">
+      <div class="msg-title">📜 Secret Message</div>
+      <div class="msg-words" id="msgWords"></div>
+    </div>
+    <div class="decoder" id="decoder">
+      <div class="dec-title">🗝 Decoded so far</div>
+      <div class="dec-chips" id="decChips"></div>
+    </div>
+    <div id="qCont"></div>
+    <div class="prog-wrap" style="margin-top:14px">
+      <div class="prog-label">Answered: <span id="ac">0</span> / 6</div>
+      <div class="prog-bar"><div class="prog-fill" id="p4" style="width:0%"></div></div>
+    </div>
+    <button class="btn" id="unlockBtn" onclick="showFireworks()" disabled>🎁 Reveal Message!</button>
+  </div>
+</div>
+
+<!-- Fireworks overlay -->
+<div id="fw-overlay">
+  <canvas id="fw-canvas"></canvas>
+  <div class="fw-msg">
+    <h2>🎂 Happy Birthday, Bernard! 🎂</h2>
+    <div class="decoded-final" id="fw-decoded"></div>
+    <p>Semoga selalu sehat, bahagia, dan terus berkembang!<br>With love 🤍</p>
+    <button class="fw-btn" onclick="openScrapbook()">🎁 Open Your Scrapbook!</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  STAGE 1 — Crossword
+//  Grid 7×7 (rows 0-6, cols 0-6), 10 words
+//
+//  . . B R A N D     BRAND across (0,2)
+//  . . R . . E A     BREAD down (0,2), NEAR down (0,5), DARE down (0,6)
+//  . . E . . A R
+//  B E A R . R E     BEAR across (3,0)
+//  A . D E A N .     DEAN across (4,2)
+//  R . . N N . .
+//  N E R D D . .     NERD across (6,0)
+//
+//  Down: BARN(3,0), REND(3,3), AND(4,4)
+//  Clue numbers:
+//  1=(0,2) BRAND+BREAD  2=(0,5) NEAR  3=(0,6) DARE
+//  4=(3,0) BEAR+BARN    5=(3,3) REND   6=(4,2) DEAN  7=(4,4) AND  8=(6,0) NERD
+// ═══════════════════════════════════════════════════
+
+const CW_WORDS = [
+  {id:0,word:'BRAND',dir:'A',r:0,c:2,num:1,clue:'What makes a product recognizable (5)'},
+  {id:1,word:'BEAR', dir:'A',r:3,c:0,num:3,clue:'Large furry forest animal (4)'},
+  {id:2,word:'DEN',  dir:'A',r:4,c:2,num:5,clue:'A cozy private room (3)'},
+  {id:3,word:'NERD', dir:'A',r:6,c:0,num:6,clue:'A highly intellectual person (4)'},
+  {id:4,word:'BREAD',dir:'D',r:0,c:2,num:1,clue:'Baked loaf made from flour (5)'},
+  {id:5,word:'NEAR', dir:'D',r:0,c:5,num:2,clue:'Not far away (4)'},
+  {id:6,word:'BARN', dir:'D',r:3,c:0,num:3,clue:'Farm storage building (4)'},
+  {id:7,word:'REND', dir:'D',r:3,c:3,num:4,clue:'To tear apart forcefully (4)'},
+];
+
+// Verified clean 7×7 grid — zero illegal adjacencies
+const CW_ANS = [
+  ['.','.',  'B','R','A','N','.'],
+  ['.','.','R','.','.','E','.'],
+  ['.','.','E','.','.','A','.'],
+  ['B','E','A','R','.','R','.'],
+  ['A','.','D','E','N','.','.'],
+  ['R','.','.','N','.','.', '.'],
+  ['N','E','R','D','.','.', '.'],
+];
+const CW_ROWS=7,CW_COLS=7;
+const CW_NUMS={'0,2':1,'0,5':2,'3,0':3,'3,3':4,'4,2':5,'6,0':6};
+
+let cwSolved=new Set(),cwActive=null,cwDom=[];
+
+function initS1(){
+  const tbl=document.getElementById('cwGrid');tbl.innerHTML='';
+  for(let r=0;r<CW_ROWS;r++){
+    const tr=document.createElement('tr');cwDom[r]=[];
+    for(let c=0;c<CW_COLS;c++){
+      const td=document.createElement('td');
+      if(CW_ANS[r][c]==='.'){
+        td.classList.add('blk');
+      } else {
+        const n=CW_NUMS[`${r},${c}`];
+        if(n!==undefined){const sp=document.createElement('span');sp.className='cw-num';sp.textContent=n;td.appendChild(sp)}
+        td.addEventListener('click',()=>cwClick(r,c));
+      }
+      cwDom[r][c]=td;tr.appendChild(td);
+    }
+    tbl.appendChild(tr);
+  }
+  const ca=document.getElementById('clA'),cd=document.getElementById('clD');
+  ca.innerHTML='';cd.innerHTML='';
+  CW_WORDS.forEach(w=>{
+    const div=document.createElement('div');div.className='ci';div.id=`ci${w.id}`;
+    div.innerHTML=`<span class="cn">${w.num}.</span>${w.clue}`;
+    div.addEventListener('click',()=>cwSelect(w.id));
+    (w.dir==='A'?ca:cd).appendChild(div);
+  });
+  const pool=document.getElementById('lpool');pool.innerHTML='';
+  'BERNARD'.split('').forEach(l=>{
+    const b=document.createElement('button');b.className='lbtn';b.textContent=l;
+    b.onclick=()=>{const i=document.getElementById('wInp');i.value+=l;i.focus()};
+    pool.appendChild(b);
+  });
+  document.getElementById('wInp').addEventListener('keydown',e=>{if(e.key==='Enter')submitWord()});
+}
+
+function cwCells(w){
+  return Array.from({length:w.word.length},(_,i)=>
+    w.dir==='A'?[w.r,w.c+i]:[w.r+i,w.c]);
+}
+
+function cwClick(r,c){
+  const ids=CW_WORDS.filter(w=>cwCells(w).some(([rr,cc])=>rr===r&&cc===c)).map(w=>w.id);
+  if(!ids.length)return;
+  const unsolved=ids.find(i=>!cwSolved.has(i));
+  if(cwActive!==null&&ids.includes(cwActive)&&ids.length>1){
+    const idx=ids.indexOf(cwActive);cwSelect(ids[(idx+1)%ids.length]);
+  } else {
+    cwSelect(unsolved!==undefined?unsolved:ids[0]);
+  }
+}
+
+function cwHighlight(id){
+  for(let r=0;r<CW_ROWS;r++)for(let c=0;c<CW_COLS;c++)
+    cwDom[r][c]&&cwDom[r][c].classList.remove('sel','sel-w');
+  if(id===null)return;
+  cwCells(CW_WORDS.find(x=>x.id===id)).forEach(([r,c],i)=>{
+    const td=cwDom[r][c];
+    if(td&&!td.classList.contains('ok'))td.classList.add(i===0?'sel':'sel-w');
+  });
+}
+
+function cwSelect(id){
+  cwActive=id;cwHighlight(id);
+  document.querySelectorAll('.ci.sel').forEach(e=>e.classList.remove('sel'));
+  const ci=document.getElementById(`ci${id}`);
+  if(ci){ci.classList.add('sel');ci.scrollIntoView({block:'nearest'})}
+  const w=CW_WORDS.find(x=>x.id===id);
+  document.getElementById('clueBar').innerHTML=
+    `<span class="dbadge">${w.dir==='A'?'↔ Across':'↕ Down'}</span>
+     <span>${w.num}. ${w.clue} <em style="opacity:.5;font-weight:400">(${w.word.length} letters)</em></span>`;
+  document.getElementById('wInp').focus();
+}
+
+function submitWord(){
+  const inp=document.getElementById('wInp');
+  const typed=inp.value.toUpperCase().replace(/\s/g,'');inp.value='';
+  if(cwActive===null)return;
+  const w=CW_WORDS.find(x=>x.id===cwActive);
+  if(!w||cwSolved.has(w.id))return;
+  if(typed!==w.word){
+    inp.classList.add('err');setTimeout(()=>inp.classList.remove('err'),350);return;
+  }
+  cwCells(w).forEach(([r,c],i)=>{
+    const td=cwDom[r][c];const ns=td.querySelector('.cw-num');
+    td.textContent=w.word[i];td.classList.remove('sel','sel-w');td.classList.add('ok');
+    if(ns)td.appendChild(ns);
+  });
+  cwSolved.add(w.id);cwActive=null;
+  document.getElementById(`ci${w.id}`).classList.remove('sel');
+  document.getElementById(`ci${w.id}`).classList.add('done');
+  document.getElementById('clueBar').innerHTML='<span style="color:var(--green)">✅ Correct! Choose next word.</span>';
+  cwHighlight(null);
+  const cnt=cwSolved.size;
+  document.getElementById('sc').textContent=cnt;
+  document.getElementById('p1').style.width=(cnt/8*100)+'%';
+  if(cnt===8)document.getElementById('nb1').disabled=false;
+}
+
+// ═══════════════════════════════════════════════════
+//  STAGE 2 — Picture Math
+// ═══════════════════════════════════════════════════
+const IMG={
+  b:'https://raw.githubusercontent.com/pipit10364/fotobernard/main/Bernard%20(12).png',
+  c:'https://raw.githubusercontent.com/pipit10364/fotobernard/main/download%20(37).jpg',
+  m:'https://raw.githubusercontent.com/pipit10364/fotobernard/main/miffy%20pink.webp',
+};
+
+function initS2(){
+  const rows=[
+    [{t:'i',s:IMG.b},{t:'o',s:'+'},{t:'i',s:IMG.b},{t:'o',s:'+'},{t:'i',s:IMG.b},{t:'e'},{t:'r',s:78}],
+    [{t:'i',s:IMG.c},{t:'o',s:'+'},{t:'i',s:IMG.c},{t:'o',s:'+'},{t:'i',s:IMG.b},{t:'e'},{t:'r',s:46}],
+    [{t:'i',s:IMG.m},{t:'o',s:'+'},{t:'i',s:IMG.m},{t:'o',s:'+'},{t:'i',s:IMG.c},{t:'e'},{t:'r',s:26}],
+    [{t:'i',s:IMG.b},{t:'o',s:'+'},{t:'i',s:IMG.c},{t:'o',s:'×'},{t:'i',s:IMG.m},{t:'e'},{t:'?'}],
+  ];
+  const g=document.getElementById('mathGrid');g.innerHTML='';
+  rows.forEach(row=>{
+    const div=document.createElement('div');div.className='mrow';
+    row.forEach(item=>{
+      let el;
+      if(item.t==='i'){el=document.createElement('img');el.src=item.s;el.className='mimg'}
+      else if(item.t==='o'||item.t==='e'){el=document.createElement('span');el.className='mop';el.textContent=item.t==='e'?'=':item.s}
+      else if(item.t==='r'){el=document.createElement('span');el.className='mres';el.textContent=item.s}
+      else{el=document.createElement('input');el.type='number';el.className='minp';el.id='mans';el.placeholder='?';
+           el.addEventListener('keydown',e=>{if(e.key==='Enter')checkMath()})}
+      div.appendChild(el);
+    });
+    g.appendChild(div);
+  });
+}
+
+function checkMath(){
+  const v=parseInt(document.getElementById('mans').value||'0');
+  const fb=document.getElementById('mathFb');
+  if(v===106){
+    fb.style.color='var(--green)';
+    fb.textContent='🎉 Correct! Bernard(26) + COC(10) × Miffy(8) = 26 + 80 = 106';
+    document.getElementById('nb2').disabled=false;
+  } else {
+    fb.style.color='var(--red)';
+    fb.textContent='❌ Try again! Remember: × before +';
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  STAGE 3 — Sudoku Hard
+//  A verified hard-level 9×9 sudoku puzzle
+//  0 = empty cell
+// ═══════════════════════════════════════════════════
+const SDK_PUZZLE = [
+  [8,0,0, 0,0,0, 0,0,0],
+  [0,0,3, 6,0,0, 0,0,0],
+  [0,7,0, 0,9,0, 2,0,0],
+  [0,5,0, 0,0,7, 0,0,0],
+  [0,0,0, 0,4,5, 7,0,0],
+  [0,0,0, 1,0,0, 0,3,0],
+  [0,0,1, 0,0,0, 0,6,8],
+  [0,0,8, 5,0,0, 0,1,0],
+  [0,9,0, 0,0,0, 4,0,0],
+];
+const SDK_SOLUTION = [
+  [8,1,2, 7,5,3, 6,4,9],
+  [9,4,3, 6,8,2, 1,7,5],
+  [6,7,5, 4,9,1, 2,8,3],
+  [1,5,4, 2,3,7, 8,9,6],
+  [3,6,9, 8,4,5, 7,2,1],
+  [2,8,7, 1,6,9, 5,3,4],
+  [5,2,1, 9,7,4, 3,6,8],
+  [4,3,8, 5,2,6, 9,1,7],
+  [7,9,6, 3,1,8, 4,5,2],
+];
+
+let sdkBoard=[], sdkSelected=null, sdkDom=[];
+
+function initS3(){
+  sdkBoard=SDK_PUZZLE.map(r=>[...r]);
+  const tbl=document.getElementById('sdkGrid');tbl.innerHTML='';
+  sdkDom=[];
+  for(let r=0;r<9;r++){
+    const tr=document.createElement('tr');sdkDom[r]=[];
+    for(let c=0;c<9;c++){
+      const td=document.createElement('td');
+      if((c+1)%3===0&&c<8)td.classList.add('box-r');
+      if((r+1)%3===0&&r<8)td.classList.add('box-b');
+      const given=SDK_PUZZLE[r][c]!==0;
+      if(given){td.textContent=SDK_PUZZLE[r][c];td.classList.add('given')}
+      else{td.addEventListener('click',()=>sdkClickCell(r,c))}
+      sdkDom[r][c]=td;tr.appendChild(td);
+    }
+    tbl.appendChild(tr);
+  }
+  // Numpad
+  const np=document.getElementById('sdkNumpad');np.innerHTML='';
+  for(let n=1;n<=9;n++){
+    const b=document.createElement('button');b.className='sdk-num';b.textContent=n;
+    b.onclick=()=>sdkEnter(n);np.appendChild(b);
+  }
+  const er=document.createElement('button');er.className='sdk-num erase';er.textContent='⌫ Erase';
+  er.onclick=()=>sdkEnter(0);np.appendChild(er);
+  document.addEventListener('keydown',sdkKeydown);
+}
+
+function sdkClickCell(r,c){
+  if(SDK_PUZZLE[r][c]!==0)return;
+  sdkSelected=[r,c];sdkHighlight(r,c);
+}
+
+function sdkHighlight(sr,sc){
+  for(let r=0;r<9;r++)for(let c=0;c<9;c++){
+    sdkDom[r][c].classList.remove('sel','hi');
+    if(r===sr&&c===sc)sdkDom[r][c].classList.add('sel');
+    else if(r===sr||c===sc||(Math.floor(r/3)===Math.floor(sr/3)&&Math.floor(c/3)===Math.floor(sc/3)))
+      sdkDom[r][c].classList.add('hi');
+  }
+}
+
+function sdkEnter(num){
+  if(!sdkSelected)return;
+  const[r,c]=sdkSelected;
+  if(SDK_PUZZLE[r][c]!==0)return;
+  sdkBoard[r][c]=num;
+  sdkDom[r][c].textContent=num||'';
+  sdkDom[r][c].classList.remove('conflict','ok-cell');
+  if(num){
+    if(num===SDK_SOLUTION[r][c])sdkDom[r][c].classList.add('ok-cell');
+    else sdkDom[r][c].classList.add('conflict');
+  }
+  sdkCheckComplete();
+}
+
+function sdkKeydown(e){
+  if(!sdkSelected)return;
+  const n=parseInt(e.key);
+  if(n>=1&&n<=9)sdkEnter(n);
+  else if(e.key==='Backspace'||e.key==='Delete'||e.key==='0')sdkEnter(0);
+  else if(e.key==='ArrowUp'&&sdkSelected[0]>0)sdkClickCell(sdkSelected[0]-1,sdkSelected[1]);
+  else if(e.key==='ArrowDown'&&sdkSelected[0]<8)sdkClickCell(sdkSelected[0]+1,sdkSelected[1]);
+  else if(e.key==='ArrowLeft'&&sdkSelected[1]>0)sdkClickCell(sdkSelected[0],sdkSelected[1]-1);
+  else if(e.key==='ArrowRight'&&sdkSelected[1]<8)sdkClickCell(sdkSelected[0],sdkSelected[1]+1);
+}
+
+function sdkCheckComplete(){
+  for(let r=0;r<9;r++)for(let c=0;c<9;c++)
+    if(sdkBoard[r][c]!==SDK_SOLUTION[r][c])return;
+  document.getElementById('sdkStatus').textContent='🎉 Solved! Well done!';
+  document.getElementById('sdkStatus').style.color='var(--green)';
+  document.removeEventListener('keydown',sdkKeydown);
+  setTimeout(()=>document.getElementById('nb3').disabled=false,600);
+}
+
+// ═══════════════════════════════════════════════════
+//  STAGE 4 — Cryptogram
+//  Message: HAPPY BIRTHDAY BERNARD WISHING YOU ALL THE BEST
+//
+//  Letter map (position in first answer introducing the letter):
+//  B=1 E=2 R=3 N=4 A=5 D=7  (BERNARD BEAR)
+//  H=2 O=4 T=1               (THEO)
+//  I=4 L=6 S=9 W=7           (FACIAL WASH)
+//  G=8                        (DR STRANGE)
+//  P=4                        (INFP)
+//  U=15 Y=13                  (STRONGER WITH YOU)
+// ═══════════════════════════════════════════════════
+
+const LMAP={B:1,E:2,R:3,N:4,A:5,D:7,H:2,O:4,T:1,I:4,L:6,S:9,W:7,G:8,P:4,U:15,Y:13};
+const MESSAGE="HAPPY BIRTHDAY BERNARD WISHING YOU ALL THE BEST";
+
+const QUESTIONS=[
+  {q:'The polar bear who loves to laugh — what\'s his name?',
+   a:'BERNARDBEAR', display:'BERNARD BEAR', reveals:['A','B','D','E','N','R']},
+  {q:'Name of the MVP from Bernard\'s RoC team?',
+   a:'THEO', display:'THEO', reveals:['H','O','T']},
+  {q:'The 2-word face cleanser Bernard keeps in his bathroom?',
+   a:'FACIALWASH', display:'FACIAL WASH', reveals:['I','L','S','W']},
+  {q:'Bernard\'s favorite superhero?',
+   a:'DRSTRANGE', display:'DR STRANGE', reveals:['G']},
+  {q:'Bernard\'s MBTI type?',
+   a:'INFP', display:'INFP', reveals:['P']},
+  {q:'One of Bernard\'s perfumes, by Armani — 3 words?',
+   a:'STRONGERWITHYOU', display:'STRONGER WITH YOU', reveals:['U','Y']},
+];
+
+let revealed=new Set(),answeredCnt=0;
+
+function initS4(){
+  const mw=document.getElementById('msgWords');mw.innerHTML='';
+  MESSAGE.split(' ').forEach(word=>{
+    const wd=document.createElement('div');wd.className='msg-word';
+    word.split('').forEach(letter=>{
+      const lb=document.createElement('div');lb.className='msg-lbox';
+      const bl=document.createElement('div');bl.className='msg-blank';bl.dataset.letter=letter;
+      const nm=document.createElement('div');nm.className='msg-num';nm.textContent=LMAP[letter]||'?';
+      lb.appendChild(bl);lb.appendChild(nm);wd.appendChild(lb);
+    });
+    mw.appendChild(wd);
+  });
+  const qc=document.getElementById('qCont');qc.innerHTML='';
+  QUESTIONS.forEach((item,i)=>{
+    const div=document.createElement('div');div.className='qblock';div.id=`qb${i}`;
+    div.innerHTML=`<label>${i+1}. ${item.q}
+      <span class="ubadge">🔓 reveals: ${item.reveals.join(', ')}</span></label>
+      <input type="text" class="qinp" id="qi${i}" placeholder="Type answer…" autocomplete="off" spellcheck="false">`;
+    qc.appendChild(div);
+    document.getElementById(`qi${i}`).addEventListener('input',e=>checkQ(e.target,item,i));
+  });
+}
+
+function checkQ(inp,item,idx){
+  if(inp.value.toUpperCase().replace(/[\s.]/g,'')!==item.a)return;
+  inp.classList.add('answered');inp.disabled=true;
+  document.getElementById(`qb${idx}`).classList.add('answered');
+  item.reveals.forEach(l=>{
+    if(revealed.has(l))return;
+    revealed.add(l);
+    document.querySelectorAll(`.msg-blank[data-letter="${l}"]`).forEach(el=>{
+      el.textContent=l;el.classList.add('lit');
+    });
+    addChip(l);
+  });
+  answeredCnt++;
+  document.getElementById('ac').textContent=answeredCnt;
+  document.getElementById('p4').style.width=(answeredCnt/6*100)+'%';
+  if(answeredCnt===6){
+    setTimeout(()=>{
+      document.querySelectorAll('.msg-blank:not(.lit)').forEach(el=>{
+        el.textContent=el.dataset.letter;el.classList.add('lit');
+      });
+    },300);
+    setTimeout(()=>document.getElementById('unlockBtn').disabled=false,800);
+  }
+}
+
+function addChip(l){
+  const dec=document.getElementById('decoder');dec.style.display='block';
+  const chip=document.createElement('div');chip.className='chip';
+  chip.innerHTML=`<span>${LMAP[l]}</span> = <strong>${l}</strong>`;
+  document.getElementById('decChips').appendChild(chip);
+}
+
+// ═══════════════════════════════════════════════════
+//  Fireworks
+// ═══════════════════════════════════════════════════
+function showFireworks(){
+  document.getElementById('fw-decoded').textContent=
+    '✨ '+MESSAGE.split('').map((c,i)=>c).join('')+' ✨';
+  document.getElementById('fw-overlay').classList.add('show');
+  startFireworks();
+}
+
+function openScrapbook(){
+  window.open('https://heyzine.com/flip-book/c2996045fd.html#page/24','_blank');
+}
+
+function startFireworks(){
+  const canvas=document.getElementById('fw-canvas');
+  const ctx=canvas.getContext('2d');
+  canvas.width=window.innerWidth;canvas.height=window.innerHeight;
+  window.addEventListener('resize',()=>{canvas.width=window.innerWidth;canvas.height=window.innerHeight});
+
+  const particles=[];
+  const colors=['#FFD700','#FF6B9D','#4ECDC4','#45B7D1','#96CEB4','#FFEAA7','#DDA0DD','#98FB98','#FF7F7F','#87CEEB'];
+
+  class Particle{
+    constructor(x,y,color){
+      this.x=x;this.y=y;this.color=color;
+      this.vx=(Math.random()-0.5)*8;
+      this.vy=(Math.random()-0.5)*8-3;
+      this.alpha=1;this.size=Math.random()*4+2;
+      this.gravity=0.15;
+    }
+    update(){this.x+=this.vx;this.y+=this.vy;this.vy+=this.gravity;this.alpha-=0.016}
+    draw(){
+      ctx.save();ctx.globalAlpha=this.alpha;ctx.fillStyle=this.color;
+      ctx.beginPath();ctx.arc(this.x,this.y,this.size,0,Math.PI*2);ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function burst(x,y){
+    const color=colors[Math.floor(Math.random()*colors.length)];
+    for(let i=0;i<70;i++)particles.push(new Particle(x,y,color));
+  }
+
+  let frame=0;
+  function loop(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    if(frame%45===0)burst(Math.random()*canvas.width,Math.random()*canvas.height*0.6+50);
+    for(let i=particles.length-1;i>=0;i--){
+      particles[i].update();particles[i].draw();
+      if(particles[i].alpha<=0)particles.splice(i,1);
+    }
+    frame++;requestAnimationFrame(loop);
+  }
+  // Initial burst
+  setTimeout(()=>burst(canvas.width*.3,canvas.height*.3),100);
+  setTimeout(()=>burst(canvas.width*.7,canvas.height*.25),300);
+  setTimeout(()=>burst(canvas.width*.5,canvas.height*.4),500);
+  loop();
+}
+
+// ═══════════════════════════════════════════════════
+//  Navigation
+// ═══════════════════════════════════════════════════
+function setDots(n){
+  for(let i=1;i<=4;i++){
+    document.getElementById(`d${i}`).className='dot'+(i<n?' done':i===n?' on':'');
+  }
+}
+function goS2(){document.getElementById('s1').classList.remove('active');document.getElementById('s2').classList.add('active');setDots(2);initS2()}
+function goS3(){document.getElementById('s2').classList.remove('active');document.getElementById('s3').classList.add('active');setDots(3);initS3()}
+function goS4(){document.getElementById('s3').classList.remove('active');document.getElementById('s4').classList.add('active');setDots(4);initS4();document.removeEventListener('keydown',sdkKeydown)}
+
+initS1();
+</script>
+</body>
+</html>

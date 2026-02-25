@@ -131,6 +131,18 @@ h1{font-family:'Fredoka One',cursive;text-align:center;color:var(--navy);font-si
 .sdk-num:hover{background:var(--warm);transform:scale(1.05)}
 .sdk-num.erase{font-size:13px;background:#fff0f0;border-color:var(--red);color:var(--red)}
 .sdk-status{font-size:13px;font-weight:700;color:var(--navy);text-align:center;min-height:20px}
+.sdk-timer{
+  font-family:'Fredoka One',cursive;
+  font-size:32px;color:var(--navy);
+  letter-spacing:2px;text-align:center;
+  background:#fff;border-radius:14px;
+  padding:8px 28px;
+  box-shadow:0 2px 10px rgba(0,0,0,.08);
+  border:2px solid #e8e8e8;
+  min-width:130px;
+}
+.sdk-timer.running{color:var(--blue);border-color:var(--sky)}
+.sdk-timer.done{color:var(--green);border-color:var(--green)}
 
 /* ══ STAGE 4 — Cryptogram ══ */
 .msg-box{background:var(--navy);border-radius:15px;padding:18px 16px;margin:16px 0}
@@ -258,6 +270,7 @@ h1{font-family:'Fredoka One',cursive;text-align:center;color:var(--navy);font-si
       Click a cell, then tap a number. Good luck! 🧠
     </div>
     <div class="sdk-wrap">
+      <div class="sdk-timer" id="sdkTimer">00:00</div>
       <div class="sdk-status" id="sdkStatus">Select a cell to start</div>
       <table class="sdk-grid" id="sdkGrid"></table>
       <div class="sdk-numpad" id="sdkNumpad"></div>
@@ -296,6 +309,9 @@ h1{font-family:'Fredoka One',cursive;text-align:center;color:var(--navy);font-si
   <div class="fw-msg">
     <h2>🎂 Happy Birthday, Bernard! 🎂</h2>
     <div class="decoded-final" id="fw-decoded"></div>
+    <p id="fw-time" style="font-size:15px;color:#ffe08a;margin-bottom:8px;display:none">
+      ⏱️ Sudoku solved in <strong id="fw-time-val"></strong> — nice work!
+    </p>
     <p>Semoga selalu sehat, bahagia, dan terus berkembang!<br>With love 🤍</p>
     <button class="fw-btn" onclick="openScrapbook()">🎁 Open Your Scrapbook!</button>
   </div>
@@ -517,9 +533,27 @@ const SDK_SOLUTION = [
 ];
 
 let sdkBoard=[], sdkSelected=null, sdkDom=[];
+let sdkTimerInterval=null, sdkSeconds=0, sdkTimerStarted=false, sdkFinalTime='';
+
+function sdkStartTimer(){
+  if(sdkTimerStarted) return;
+  sdkTimerStarted=true;
+  document.getElementById('sdkTimer').classList.add('running');
+  sdkTimerInterval=setInterval(()=>{
+    sdkSeconds++;
+    const m=String(Math.floor(sdkSeconds/60)).padStart(2,'0');
+    const s=String(sdkSeconds%60).padStart(2,'0');
+    document.getElementById('sdkTimer').textContent=`${m}:${s}`;
+  },1000);
+}
 
 function initS3(){
   sdkBoard=SDK_PUZZLE.map(r=>[...r]);
+  sdkSeconds=0; sdkTimerStarted=false; sdkFinalTime='';
+  clearInterval(sdkTimerInterval);
+  const timerEl=document.getElementById('sdkTimer');
+  timerEl.textContent='00:00';
+  timerEl.className='sdk-timer';
   const tbl=document.getElementById('sdkGrid');tbl.innerHTML='';
   sdkDom=[];
   for(let r=0;r<9;r++){
@@ -548,6 +582,7 @@ function initS3(){
 
 function sdkClickCell(r,c){
   if(SDK_PUZZLE[r][c]!==0)return;
+  sdkStartTimer();
   sdkSelected=[r,c];sdkHighlight(r,c);
 }
 
@@ -588,6 +623,15 @@ function sdkKeydown(e){
 function sdkCheckComplete(){
   for(let r=0;r<9;r++)for(let c=0;c<9;c++)
     if(sdkBoard[r][c]!==SDK_SOLUTION[r][c])return;
+  // Stop timer
+  clearInterval(sdkTimerInterval);
+  const m=String(Math.floor(sdkSeconds/60)).padStart(2,'0');
+  const s=String(sdkSeconds%60).padStart(2,'0');
+  sdkFinalTime=`${m}:${s}`;
+  const timerEl=document.getElementById('sdkTimer');
+  timerEl.textContent=sdkFinalTime;
+  timerEl.classList.remove('running');
+  timerEl.classList.add('done');
   document.getElementById('sdkStatus').textContent='🎉 Solved! Well done!';
   document.getElementById('sdkStatus').style.color='var(--green)';
   document.removeEventListener('keydown',sdkKeydown);
@@ -688,6 +732,10 @@ function addChip(l){
 function showFireworks(){
   document.getElementById('fw-decoded').textContent=
     '✨ '+MESSAGE.split('').map((c,i)=>c).join('')+' ✨';
+  if(sdkFinalTime){
+    document.getElementById('fw-time').style.display='block';
+    document.getElementById('fw-time-val').textContent=sdkFinalTime;
+  }
   document.getElementById('fw-overlay').classList.add('show');
   startFireworks();
 }

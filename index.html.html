@@ -158,7 +158,33 @@ h1{font-family:'Fredoka One',cursive;text-align:center;color:var(--navy);font-si
 .msg-blank.lit{background:rgba(255,255,255,.14);border-bottom-color:var(--green);
   color:#70ffb8;animation:pop .38s cubic-bezier(.34,1.56,.64,1)}
 @keyframes pop{0%{transform:scale(.4);opacity:0}100%{transform:scale(1);opacity:1}}
-.msg-num{font-size:10px;font-weight:800;color:rgba(255,255,255,.45);line-height:1;text-align:center}
+.msg-num{font-size:10px;font-weight:800;color:rgba(255,255,255,.55);line-height:1;text-align:center}
+
+/* Message input boxes */
+.msg-input{
+  width:26px;height:30px;padding:0;
+  background:rgba(255,255,255,.06);
+  border:none;border-bottom:3px solid rgba(255,255,255,.25);
+  border-radius:3px 3px 0 0;
+  text-align:center;font-size:15px;font-weight:800;color:#fff;
+  text-transform:uppercase;font-family:'Nunito',sans-serif;
+  caret-color:var(--gold);outline:none;cursor:text;
+  transition:background .2s,border-color .2s;
+}
+.msg-input:focus{background:rgba(255,255,255,.15);border-bottom-color:var(--gold);}
+.msg-input.ok-cell{border-bottom-color:var(--green);color:#70ffb8;background:rgba(61,170,112,.15);}
+.msg-input.err-cell{border-bottom-color:var(--red);color:#ff9a9a;animation:shk .28s;}
+
+/* All-cipher unlocked banner */
+.cipher-all-known{
+  background:linear-gradient(90deg,var(--green),var(--sky));
+  color:#fff;border-radius:9px;padding:8px 14px;text-align:center;
+  font-size:13px;font-weight:800;margin:8px 0;display:none;
+}
+
+/* Message fill progress */
+.msg-prog-lbl{font-size:12.5px;font-weight:700;color:rgba(255,255,255,.7);
+  text-align:center;margin-top:10px}
 
 /* Cipher key panel */
 .cipher-key{
@@ -173,7 +199,9 @@ h1{font-family:'Fredoka One',cursive;text-align:center;color:var(--navy);font-si
   transition:all .3s;
 }
 .ck-slot.known{background:var(--warm);border-color:var(--gold);color:var(--navy);
-  animation:pop .28s cubic-bezier(.34,1.56,.64,1)}
+  animation:pop .28s cubic-bezier(.34,1.56,.64,1);cursor:pointer;}
+.ck-slot.known:hover{transform:scale(1.08);box-shadow:0 2px 8px rgba(245,166,35,.4)}
+.ck-slot.applied{background:#d4f5e3;border-color:var(--green);}
 .ck-slot .ck-n{font-size:9px;color:inherit;opacity:.7;display:block}
 .ck-slot .ck-l{font-size:14px;font-weight:800;display:block}
 
@@ -338,22 +366,26 @@ h1{font-family:'Fredoka One',cursive;text-align:center;color:var(--navy);font-si
   <div class="stage" id="s4">
     <div class="instr">
       <strong>🔐 Cryptogram Challenge</strong><br>
-      Answer questions about Bernard in <strong>any order</strong> you like.
-      Each correct answer reveals which <strong>number = which letter</strong> in the secret message —
-      and those letters will light up <em>everywhere</em> they appear! 🔍
+      Jawab pertanyaan tentang Bernard untuk menemukan cipher key (angka mana = huruf apa).
+      Setelah tahu, <strong>klik cipher key</strong> untuk mengisi semua kotak dengan angka yang sama —
+      atau ketik langsung di kotak pesan! 🔍
     </div>
     <div class="msg-box">
-      <div class="msg-title">📜 Secret Message — numbers are your cipher key</div>
+      <div class="msg-title">📜 Secret Message — ketik huruf di tiap kotak</div>
       <div class="msg-words" id="msgWords"></div>
+      <div class="msg-prog-lbl" id="msgProgLbl">Terisi: 0 / 40 huruf</div>
+    </div>
+    <div class="cipher-all-known" id="cipherAllKnown">
+      🗝 Semua cipher key terkuak! Klik tiap key di bawah untuk auto-fill pesan →
     </div>
     <!-- Cipher key tracker -->
     <div class="cipher-key">
-      <div class="ck-title">🗝 Cipher Key — discovered so far</div>
+      <div class="ck-title">🗝 Cipher Key — klik yang sudah terkuak untuk isi pesan</div>
       <div class="ck-grid" id="ckGrid"></div>
     </div>
     <div id="qCont"></div>
     <div class="prog-wrap" style="margin-top:14px">
-      <div class="prog-label">Answered: <span id="ac">0</span> / 6</div>
+      <div class="prog-label">Pertanyaan dijawab: <span id="ac">0</span> / 6</div>
       <div class="prog-bar"><div class="prog-fill" id="p4" style="width:0%"></div></div>
     </div>
     <button class="btn" id="unlockBtn" onclick="showFireworks()" disabled>🎁 Reveal Message!</button>
@@ -503,7 +535,7 @@ function submitWord(){
 }
 
 // ═══════════════════════════════════════════════════
-//  STAGE 2 — Picture Math
+//  STAGE 2 — Picture Math (3 random variants)
 // ═══════════════════════════════════════════════════
 const IMG={
   b:'https://raw.githubusercontent.com/pipit10364/fotobernard/main/Bernard%20(12).png',
@@ -511,15 +543,39 @@ const IMG={
   m:'https://raw.githubusercontent.com/pipit10364/fotobernard/main/miffy%20pink.webp',
 };
 
+// B=26, C=10, M=8  →  B+C×M = 26+80 = 106
+let currentMathAnswer=106, currentMathExplain='';
+
 function initS2(){
-  const rows=[
-    [{t:'i',s:IMG.b},{t:'o',s:'+'},{t:'i',s:IMG.b},{t:'o',s:'+'},{t:'i',s:IMG.b},{t:'e'},{t:'r',s:78}],
-    [{t:'i',s:IMG.c},{t:'o',s:'+'},{t:'i',s:IMG.c},{t:'o',s:'+'},{t:'i',s:IMG.b},{t:'e'},{t:'r',s:46}],
-    [{t:'i',s:IMG.m},{t:'o',s:'+'},{t:'i',s:IMG.m},{t:'o',s:'+'},{t:'i',s:IMG.c},{t:'e'},{t:'r',s:26}],
-    [{t:'i',s:IMG.b},{t:'o',s:'+'},{t:'i',s:IMG.c},{t:'o',s:'×'},{t:'i',s:IMG.m},{t:'e'},{t:'?'}],
+  const B=IMG.b,C=IMG.c,M=IMG.m;
+  const SETS=[
+    // Variant A: triple sums
+    {rows:[
+      [{t:'i',s:B},{t:'o',s:'+'},{t:'i',s:B},{t:'o',s:'+'},{t:'i',s:B},{t:'e'},{t:'r',s:78}],
+      [{t:'i',s:C},{t:'o',s:'+'},{t:'i',s:C},{t:'o',s:'+'},{t:'i',s:B},{t:'e'},{t:'r',s:46}],
+      [{t:'i',s:M},{t:'o',s:'+'},{t:'i',s:M},{t:'o',s:'+'},{t:'i',s:C},{t:'e'},{t:'r',s:26}],
+      [{t:'i',s:B},{t:'o',s:'+'},{t:'i',s:C},{t:'o',s:'×'},{t:'i',s:M},{t:'e'},{t:'?'}],
+    ],explain:'Bernard(26) + COC(10) × Miffy(8) = 26 + 80 = 106'},
+    // Variant B: doubles & triple + multiply
+    {rows:[
+      [{t:'i',s:B},{t:'o',s:'+'},{t:'i',s:B},{t:'e'},{t:'r',s:52}],
+      [{t:'i',s:C},{t:'o',s:'+'},{t:'i',s:C},{t:'o',s:'+'},{t:'i',s:C},{t:'e'},{t:'r',s:30}],
+      [{t:'i',s:M},{t:'o',s:'×'},{t:'i',s:C},{t:'e'},{t:'r',s:80}],
+      [{t:'i',s:B},{t:'o',s:'+'},{t:'i',s:C},{t:'o',s:'×'},{t:'i',s:M},{t:'e'},{t:'?'}],
+    ],explain:'Bernard(26) + COC(10) × Miffy(8) = 26 + 80 = 106'},
+    // Variant C: subtract & small sums
+    {rows:[
+      [{t:'i',s:M},{t:'o',s:'+'},{t:'i',s:M},{t:'o',s:'+'},{t:'i',s:M},{t:'e'},{t:'r',s:24}],
+      [{t:'i',s:C},{t:'o',s:'+'},{t:'i',s:M},{t:'e'},{t:'r',s:18}],
+      [{t:'i',s:B},{t:'o',s:'-'},{t:'i',s:C},{t:'e'},{t:'r',s:16}],
+      [{t:'i',s:B},{t:'o',s:'+'},{t:'i',s:C},{t:'o',s:'×'},{t:'i',s:M},{t:'e'},{t:'?'}],
+    ],explain:'Bernard(26) + COC(10) × Miffy(8) = 26 + 80 = 106'},
   ];
+  const chosen=SETS[Math.floor(Math.random()*SETS.length)];
+  currentMathAnswer=106;
+  currentMathExplain=chosen.explain;
   const g=document.getElementById('mathGrid');g.innerHTML='';
-  rows.forEach(row=>{
+  chosen.rows.forEach(row=>{
     const div=document.createElement('div');div.className='mrow';
     row.forEach(item=>{
       let el;
@@ -537,9 +593,9 @@ function initS2(){
 function checkMath(){
   const v=parseInt(document.getElementById('mans').value||'0');
   const fb=document.getElementById('mathFb');
-  if(v===106){
+  if(v===currentMathAnswer){
     fb.style.color='var(--green)';
-    fb.textContent='🎉 Correct! Bernard(26) + COC(10) × Miffy(8) = 26 + 80 = 106';
+    fb.textContent='🎉 Correct! '+currentMathExplain;
     document.getElementById('nb2').disabled=false;
   } else {
     fb.style.color='var(--red)';
@@ -678,100 +734,123 @@ function sdkCheckComplete(){
 }
 
 // ═══════════════════════════════════════════════════
-//  STAGE 4 — Cryptogram
+//  STAGE 4 — Cryptogram (manual input per box)
 //
-//  PROPER 1-to-1 substitution cipher.
 //  Message: HAPPY BIRTHDAY BERNARD WISHING YOU ALL THE BEST
-//  Unique letters used: A B D E G H I L N O P R S T U W Y (17 letters)
-//
-//  Cipher (letter → code number, all unique):
-//    A=5   B=1   D=7   E=2   G=8   H=17  I=4
-//    L=6   N=9   O=3   P=16  R=13  S=21  T=11
+//  Strict 1-to-1 cipher (letter → unique number):
+//    A=5  B=1  D=7  E=2  G=8  H=17  I=4
+//    L=6  N=9  O=3  P=16  R=13  S=21  T=11
 //    U=15  W=18  Y=12
-//
-//  Question reveals (only NEW letters per question):
-//    Q1 BERNARDBEAR  → B=1,  E=2,  R=13, N=9,  A=5,  D=7
-//    Q2 THEO         → T=11, H=17, O=3   (E already known)
-//    Q3 FACIALWASH   → I=4,  L=6,  W=18, S=21  (A,H already known)
-//    Q4 DRSTRANGE    → G=8   (D,R,S,T,A,N,E already known)
-//    Q5 INFP         → P=16  (I,N already known)
-//    Q6 STRONGERWITHYOU → U=15, Y=12  (rest already known)
+//  Total message boxes: 40 letters, 17 unique codes
 // ═══════════════════════════════════════════════════
 
-// Cipher: letter → code number (strictly 1-to-1)
-const LMAP={
-  A:5,  B:1,  D:7,  E:2,  G:8,  H:17, I:4,
-  L:6,  N:9,  O:3,  P:16, R:13, S:21, T:11,
-  U:15, W:18, Y:12
-};
+const LMAP={A:5,B:1,D:7,E:2,G:8,H:17,I:4,L:6,N:9,O:3,P:16,R:13,S:21,T:11,U:15,W:18,Y:12};
+// Reverse: code → letter
+const LMAP_REV={};
+Object.entries(LMAP).forEach(([l,n])=>{LMAP_REV[n]=l;});
 
 const MESSAGE="HAPPY BIRTHDAY BERNARD WISHING YOU ALL THE BEST";
+const MSG_TOTAL=MESSAGE.replace(/ /g,'').length; // 40
 
 const QUESTIONS=[
   {q:"The polar bear who loves to laugh — what's his name?",
-   a:'BERNARDBEAR', display:'BERNARD BEAR',
+   a:'BERNARDBEAR',display:'BERNARD BEAR',
    reveals:['B','E','R','N','A','D'],
    hint:'His first name is also the name of this birthday boy 🐻'},
   {q:"Name of the MVP from Bernard's RoC team?",
-   a:'THEO', display:'THEO',
+   a:'THEO',display:'THEO',
    reveals:['T','H','O'],
    hint:'4 letters, starts with T'},
   {q:"The 2-word face cleanser Bernard keeps in his bathroom?",
-   a:'FACIALWASH', display:'FACIAL WASH',
+   a:'FACIALWASH',display:'FACIAL WASH',
    reveals:['I','L','W','S'],
    hint:'Think skincare routine 🧴'},
   {q:"Bernard's favorite superhero?",
-   a:'DRSTRANGE', display:'DR STRANGE',
+   a:'DRSTRANGE',display:'DR STRANGE',
    reveals:['G'],
    hint:'Sorcerer Supreme from Marvel 🪄'},
   {q:"Bernard's MBTI type?",
-   a:'INFP', display:'INFP',
+   a:'INFP',display:'INFP',
    reveals:['P'],
    hint:'The Mediator personality type'},
   {q:"One of Bernard's perfumes, by Armani — 3 words?",
-   a:'STRONGERWITHYOU', display:'STRONGER WITH YOU',
+   a:'STRONGERWITHYOU',display:'STRONGER WITH YOU',
    reveals:['U','Y'],
    hint:'Armani, 3 words, starts with "Stronger…" 💙'},
 ];
 
-let revealed=new Set(), answeredCnt=0;
+let cipherRevealed=new Set(), answeredCnt=0, filledCorrect=0;
+let isUpdatingInputs=false; // prevent re-entrant propagation
 
 function initS4(){
-  // Build message display
+  cipherRevealed=new Set(); answeredCnt=0; filledCorrect=0;
+  document.getElementById('ac').textContent='0';
+  document.getElementById('p4').style.width='0%';
+  document.getElementById('unlockBtn').disabled=true;
+  document.getElementById('cipherAllKnown').style.display='none';
+
+  // ── Build message display with INPUT boxes ──
   const mw=document.getElementById('msgWords');mw.innerHTML='';
   MESSAGE.split(' ').forEach(word=>{
     const wd=document.createElement('div');wd.className='msg-word';
     word.split('').forEach(letter=>{
+      const code=LMAP[letter];
       const lb=document.createElement('div');lb.className='msg-lbox';
-      const bl=document.createElement('div');bl.className='msg-blank';bl.dataset.letter=letter;
-      const nm=document.createElement('div');nm.className='msg-num';nm.textContent=LMAP[letter]??'?';
-      lb.appendChild(bl);lb.appendChild(nm);wd.appendChild(lb);
+      const inp=document.createElement('input');
+      inp.type='text';inp.maxLength=1;
+      inp.className='msg-input';
+      inp.dataset.num=code;
+      inp.dataset.answer=letter;
+      inp.addEventListener('input',e=>onMsgInput(e,code));
+      inp.addEventListener('keydown',e=>{
+        // Allow arrow keys to jump to next/prev input
+        if(e.key==='ArrowRight'||e.key==='Tab'){
+          e.preventDefault();
+          const all=Array.from(document.querySelectorAll('.msg-input'));
+          const idx=all.indexOf(inp);
+          if(idx<all.length-1)all[idx+1].focus();
+        } else if(e.key==='ArrowLeft'){
+          e.preventDefault();
+          const all=Array.from(document.querySelectorAll('.msg-input'));
+          const idx=all.indexOf(inp);
+          if(idx>0)all[idx-1].focus();
+        }
+      });
+      const nm=document.createElement('div');nm.className='msg-num';nm.textContent=code;
+      lb.appendChild(inp);lb.appendChild(nm);wd.appendChild(lb);
     });
     mw.appendChild(wd);
   });
+  updateMsgProgress();
 
-  // Build cipher key tracker
+  // ── Build cipher key slots ──
   const ckg=document.getElementById('ckGrid');ckg.innerHTML='';
-  // Sort by code number for easy reference
   Object.entries(LMAP)
     .sort((a,b)=>a[1]-b[1])
     .forEach(([letter,code])=>{
       const slot=document.createElement('div');
       slot.className='ck-slot';slot.id=`ck${letter}`;
+      slot.title=`Klik untuk isi semua kotak angka ${code}`;
       slot.innerHTML=`<span class="ck-n">${code}</span><span class="ck-l">?</span>`;
+      slot.addEventListener('click',()=>{
+        if(!slot.classList.contains('known'))return;
+        applyKey(code,letter);
+        slot.classList.add('applied');
+        setTimeout(()=>slot.classList.remove('applied'),600);
+      });
       ckg.appendChild(slot);
     });
 
-  // Build questions
+  // ── Build questions ──
   const qc=document.getElementById('qCont');qc.innerHTML='';
   QUESTIONS.forEach((item,i)=>{
     const div=document.createElement('div');div.className='qblock';div.id=`qb${i}`;
     div.innerHTML=`
       <label>${i+1}. ${item.q}
-        <span class="ubadge">🔓 unlocks: ${item.reveals.map(l=>l+'='+LMAP[l]).join(', ')}</span>
+        <span class="ubadge">🔓 ${item.reveals.map(l=>`${l}=${LMAP[l]}`).join(', ')}</span>
       </label>
       <div style="display:flex;gap:8px;align-items:center">
-        <input type="text" class="qinp" id="qi${i}" placeholder="Type answer…" autocomplete="off" spellcheck="false" style="flex:1">
+        <input type="text" class="qinp" id="qi${i}" placeholder="Ketik jawaban…" autocomplete="off" spellcheck="false" style="flex:1">
         <button onclick="showHint(${i})" style="font-size:12px;padding:6px 10px;border:2px solid #ddd;border-radius:7px;background:#f9f9f9;cursor:pointer;color:#888;font-weight:700;white-space:nowrap">💡 Hint</button>
       </div>
       <div id="hint${i}" style="display:none;font-size:12px;color:var(--blue);font-weight:600;margin-top:5px;padding:5px 8px;background:#eef4ff;border-radius:6px">
@@ -780,6 +859,48 @@ function initS4(){
     qc.appendChild(div);
     document.getElementById(`qi${i}`).addEventListener('input',e=>checkQ(e.target,item,i));
   });
+}
+
+function onMsgInput(e, code){
+  if(isUpdatingInputs)return;
+  const raw=e.target.value.toUpperCase().replace(/[^A-Z]/g,'');
+  const letter=raw.slice(-1); // take last typed char
+  isUpdatingInputs=true;
+  // Propagate to ALL boxes with same code
+  document.querySelectorAll(`.msg-input[data-num="${code}"]`).forEach(inp=>{
+    inp.value=letter;
+    inp.classList.remove('ok-cell','err-cell');
+    if(letter){
+      if(letter===inp.dataset.answer) inp.classList.add('ok-cell');
+      else inp.classList.add('err-cell');
+    }
+  });
+  isUpdatingInputs=false;
+  updateMsgProgress();
+}
+
+function applyKey(code, letter){
+  // Auto-fill all boxes with this code with the correct letter
+  isUpdatingInputs=true;
+  document.querySelectorAll(`.msg-input[data-num="${code}"]`).forEach(inp=>{
+    inp.value=letter;
+    inp.classList.remove('err-cell');
+    inp.classList.add('ok-cell');
+  });
+  isUpdatingInputs=false;
+  updateMsgProgress();
+}
+
+function updateMsgProgress(){
+  let correct=0;
+  document.querySelectorAll('.msg-input').forEach(inp=>{
+    if(inp.value.toUpperCase()===inp.dataset.answer)correct++;
+  });
+  filledCorrect=correct;
+  document.getElementById('msgProgLbl').textContent=`Terisi: ${correct} / ${MSG_TOTAL} huruf`;
+  if(correct===MSG_TOTAL){
+    document.getElementById('unlockBtn').disabled=false;
+  }
 }
 
 function showHint(i){
@@ -791,18 +912,13 @@ function checkQ(inp,item,idx){
   if(inp.value.toUpperCase().replace(/[\s.]/g,'')!==item.a)return;
   inp.classList.add('answered');inp.disabled=true;
   document.getElementById(`qb${idx}`).classList.add('answered');
-  // Hide hint button after answering
   const hintBtn=document.getElementById(`qb${idx}`).querySelector('button');
   if(hintBtn)hintBtn.style.display='none';
 
+  // Reveal cipher key entries
   item.reveals.forEach(l=>{
-    if(revealed.has(l))return;
-    revealed.add(l);
-    // Light up message blanks
-    document.querySelectorAll(`.msg-blank[data-letter="${l}"]`).forEach(el=>{
-      el.textContent=l;el.classList.add('lit');
-    });
-    // Update cipher key tracker
+    if(cipherRevealed.has(l))return;
+    cipherRevealed.add(l);
     const slot=document.getElementById(`ck${l}`);
     if(slot){
       slot.querySelector('.ck-l').textContent=l;
@@ -815,12 +931,8 @@ function checkQ(inp,item,idx){
   document.getElementById('p4').style.width=(answeredCnt/6*100)+'%';
 
   if(answeredCnt===6){
-    setTimeout(()=>{
-      document.querySelectorAll('.msg-blank:not(.lit)').forEach(el=>{
-        el.textContent=el.dataset.letter;el.classList.add('lit');
-      });
-    },300);
-    setTimeout(()=>document.getElementById('unlockBtn').disabled=false,800);
+    // Show "all unlocked" banner
+    document.getElementById('cipherAllKnown').style.display='block';
   }
 }
 
@@ -896,197 +1008,101 @@ function goS3(){document.getElementById('s2').classList.remove('active');documen
 function goS4(){document.getElementById('s3').classList.remove('active');document.getElementById('s4').classList.add('active');setDots(4);initS4();document.removeEventListener('keydown',sdkKeydown)}
 
 // ═══════════════════════════════════════════════════
-//  🎵 Background Music — Web Audio API synthesizer
-//  Original cheerful looping melody, no external files
+//  🎵 Background Music — Lookahead Web Audio Scheduler
+//  Standard pattern: schedule notes ~400ms ahead, tick every 150ms
+//  Avoids the "schedule all at once" bug from before
 // ═══════════════════════════════════════════════════
 
-let audioCtx = null, masterGain = null, musicPlaying = false;
-let scheduledNodes = [], loopTimeout = null;
+let audioCtx=null,masterGain=null,musicPlaying=false;
+let schedNoteIdx=0,schedNextTime=0,schedTimer=null;
 
-// Note frequencies (Hz)
-const N = {
-  G3:196.00, A3:220.00, B3:246.94,
-  C4:261.63, D4:293.66, E4:329.63, F4:349.23, G4:392.00, A4:440.00, B4:493.88,
-  C5:523.25, D5:587.33, E5:659.25, F5:698.46, G5:784.00, A5:880.00,
-  _:0 // rest
+const MF={
+  C4:261.63,D4:293.66,E4:329.63,F4:349.23,G4:392,A4:440,B4:493.88,
+  C5:523.25,D5:587.33,E5:659.25,G5:784,A5:880
 };
+const MBPM=128,MBEAT=60/MBPM;
 
-// Cheerful upbeat melody in C major, 4/4 @ 128 BPM
-// Format: [freq, beats]  — 1 beat = 0.469s
-const BPM = 128;
-const BEAT = 60 / BPM;
-
-const MELODY = [
-  // Phrase 1 — bubbly opening
-  [N.E4,0.5],[N.G4,0.5],[N.C5,1],[N.B4,0.5],[N.A4,0.5],
-  [N.G4,1],[N.E4,0.5],[N.G4,0.5],[N.A4,2],
-  // Phrase 2 — stepping up
-  [N.A4,0.5],[N.B4,0.5],[N.C5,1],[N.D5,0.5],[N.C5,0.5],
-  [N.B4,1],[N.G4,0.5],[N.A4,0.5],[N.G4,2],
-  // Phrase 3 — playful skip
-  [N.C5,0.5],[N.C5,0.5],[N.B4,0.5],[N.A4,0.5],[N.G4,1],[N.E4,1],
-  [N.F4,0.5],[N.G4,0.5],[N.A4,0.5],[N.G4,0.5],[N.F4,1],[N.E4,1],
-  // Phrase 4 — resolution
-  [N.D4,0.5],[N.E4,0.5],[N.F4,1],[N.E4,0.5],[N.D4,0.5],
-  [N.C4,1],[N.E4,0.5],[N.G4,0.5],[N.C4,2],
+// Cheerful 8-bar looping melody in C major
+const MSEQ=[
+  [MF.E4,.5],[MF.G4,.5],[MF.C5,1],[MF.B4,.5],[MF.A4,.5],
+  [MF.G4,1],[MF.E4,.5],[MF.G4,.5],[MF.A4,2],
+  [MF.A4,.5],[MF.B4,.5],[MF.C5,1],[MF.D5,.5],[MF.C5,.5],
+  [MF.B4,1],[MF.G4,.5],[MF.A4,.5],[MF.G4,2],
+  [MF.C5,.5],[MF.C5,.5],[MF.B4,.5],[MF.A4,.5],[MF.G4,1],[MF.E4,1],
+  [MF.F4,.5],[MF.G4,.5],[MF.A4,.5],[MF.G4,.5],[MF.F4,1],[MF.E4,1],
+  [MF.D4,.5],[MF.E4,.5],[MF.F4,1],[MF.E4,.5],[MF.D4,.5],
+  [MF.C4,1],[MF.E4,.5],[MF.G4,.5],[MF.C4,2],
 ];
 
-// Bassline: [freq, beats]
-const BASS = [
-  [N.C4,2],[N.G3,2],
-  [N.A3,2],[N.E4,2],  // note: E4 used as a brighter A bass stand-in
-  [N.F4,2],[N.C4,2],
-  [N.G3,2],[N.C4,2],
-  // repeat pattern for remaining phrases
-  [N.C4,2],[N.G3,2],
-  [N.A3,2],[N.E4,2],
-  [N.F4,2],[N.C4,2],
-  [N.G3,2],[N.C4,2],
-];
-
-function initAudio() {
-  if (audioCtx) return;
-  const AC = window.AudioContext || window.webkitAudioContext;
-  if (!AC) return;
-  audioCtx = new AC();
-  masterGain = audioCtx.createGain();
-  masterGain.gain.value = 0.38;
-  masterGain.connect(audioCtx.destination);
+function initAudio(){
+  if(audioCtx)return true;
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC)return false;
+    audioCtx=new AC();
+    masterGain=audioCtx.createGain();
+    masterGain.gain.value=0.35;
+    masterGain.connect(audioCtx.destination);
+    return true;
+  }catch(e){return false;}
 }
 
-function playNote(freq, startTime, dur, type='sine', gainVal=0.25, detune=0) {
-  if (!audioCtx || freq===0) return null;
-  const osc = audioCtx.createOscillator();
-  const g = audioCtx.createGain();
-  osc.type = type;
-  osc.frequency.value = freq;
-  osc.detune.value = detune;
-  g.gain.setValueAtTime(0, startTime);
-  g.gain.linearRampToValueAtTime(gainVal, startTime + 0.02);
-  g.gain.setValueAtTime(gainVal, startTime + dur * 0.72);
-  g.gain.exponentialRampToValueAtTime(0.001, startTime + dur * 0.95);
-  osc.connect(g); g.connect(masterGain);
-  osc.start(startTime); osc.stop(startTime + dur);
-  scheduledNodes.push(osc);
-  return osc;
+function schedOneNote(freq,startT,dur){
+  const osc=audioCtx.createOscillator();
+  const env=audioCtx.createGain();
+  osc.type='triangle';
+  osc.frequency.value=freq;
+  env.gain.setValueAtTime(0.001,startT);
+  env.gain.linearRampToValueAtTime(0.28,startT+0.02);
+  env.gain.setValueAtTime(0.22,startT+dur*0.65);
+  env.gain.exponentialRampToValueAtTime(0.001,startT+dur*0.92);
+  osc.connect(env);env.connect(masterGain);
+  osc.start(startT);osc.stop(startT+dur+0.05);
 }
 
-function playChord(freqs, startTime, dur) {
-  freqs.forEach(f => playNote(f, startTime, dur, 'triangle', 0.08));
-}
-
-// Chord progression: [C,E,G]  [Am,C,E]  [F,A,C5]  [G,B,D5]
-const CHORDS = [
-  [N.C4,N.E4,N.G4], [N.A3,N.C4,N.E4],
-  [N.F4,N.A4,N.C5], [N.G3,N.B3,N.D4],
-  [N.C4,N.E4,N.G4], [N.A3,N.C4,N.E4],
-  [N.F4,N.A4,N.C5], [N.G3,N.B3,N.D4],
-];
-
-function scheduleLoop(startTime) {
-  if (!musicPlaying) return;
-  let t = startTime;
-
-  // --- melody ---
-  MELODY.forEach(([freq, beats]) => {
-    const dur = beats * BEAT;
-    playNote(freq, t, dur, 'triangle', 0.22);
-    // Harmony a third below
-    const harmony = freq * 0.794; // ~minor third down
-    playNote(harmony, t, dur, 'sine', 0.07);
-    t += dur;
-  });
-
-  const loopDuration = MELODY.reduce((s,[,b])=>s+b*BEAT,0);
-
-  // --- bass (restart at startTime) ---
-  let tb = startTime;
-  BASS.forEach(([freq, beats]) => {
-    const dur = beats * BEAT;
-    playNote(freq * 0.5, tb, dur, 'triangle', 0.18); // sub-bass
-    tb += dur;
-  });
-
-  // --- background chords (2 beats each) ---
-  let tc = startTime;
-  CHORDS.forEach(chord => {
-    playChord(chord, tc, BEAT * 1.9);
-    tc += BEAT * 2;
-  });
-
-  // Kick-style low thud on beats 1 & 3 every bar
-  for (let bar = 0; bar < 8; bar++) {
-    const barStart = startTime + bar * BEAT * 4;
-    [0, BEAT*2].forEach(offset => {
-      if (!audioCtx) return;
-      const o = audioCtx.createOscillator();
-      const g = audioCtx.createGain();
-      o.frequency.setValueAtTime(140, barStart + offset);
-      o.frequency.exponentialRampToValueAtTime(40, barStart + offset + 0.12);
-      g.gain.setValueAtTime(0.28, barStart + offset);
-      g.gain.exponentialRampToValueAtTime(0.001, barStart + offset + 0.18);
-      o.connect(g); g.connect(masterGain);
-      o.start(barStart + offset); o.stop(barStart + offset + 0.2);
-      scheduledNodes.push(o);
-    });
-    // Hi-hat on every beat
-    for (let beat = 0; beat < 4; beat++) {
-      if (!audioCtx) return;
-      const bf = barStart + beat * BEAT;
-      const o2 = audioCtx.createOscillator();
-      const g2 = audioCtx.createGain();
-      const bpf = audioCtx.createBiquadFilter();
-      bpf.type = 'highpass'; bpf.frequency.value = 8000;
-      o2.type = 'square'; o2.frequency.value = 6000 + Math.random()*2000;
-      g2.gain.setValueAtTime(0.04, bf);
-      g2.gain.exponentialRampToValueAtTime(0.001, bf + 0.07);
-      o2.connect(bpf); bpf.connect(g2); g2.connect(masterGain);
-      o2.start(bf); o2.stop(bf + 0.08);
-      scheduledNodes.push(o2);
-    }
+function musicTick(){
+  if(!musicPlaying||!audioCtx)return;
+  while(schedNextTime<audioCtx.currentTime+0.4){
+    const[freq,beats]=MSEQ[schedNoteIdx];
+    schedOneNote(freq,schedNextTime,beats*MBEAT);
+    schedNextTime+=beats*MBEAT;
+    schedNoteIdx=(schedNoteIdx+1)%MSEQ.length;
   }
-
-  // Schedule next loop slightly before this one ends
-  loopTimeout = setTimeout(() => scheduleLoop(startTime + loopDuration), (loopDuration - 0.3) * 1000);
+  schedTimer=setTimeout(musicTick,150);
 }
 
-function stopAllNodes() {
-  clearTimeout(loopTimeout);
-  scheduledNodes.forEach(n => { try { n.stop(); } catch(e){} });
-  scheduledNodes = [];
-}
-
-function toggleMusic() {
-  initAudio();
-  if (!audioCtx) { alert('Web Audio not supported in this browser.'); return; }
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-
-  musicPlaying = !musicPlaying;
-  const btn = document.getElementById('music-btn');
-  const volBar = document.getElementById('vol-bar');
-
-  if (musicPlaying) {
-    btn.classList.add('playing'); btn.textContent = '🎶';
-    btn.title = 'Click to pause | long-press for volume';
-    scheduleLoop(audioCtx.currentTime + 0.05);
-    volBar.style.display = 'flex';
+function toggleMusic(){
+  if(!initAudio()){alert('Web Audio API tidak didukung browser ini.');return;}
+  if(audioCtx.state==='suspended')audioCtx.resume();
+  musicPlaying=!musicPlaying;
+  const btn=document.getElementById('music-btn');
+  const vb=document.getElementById('vol-bar');
+  if(musicPlaying){
+    btn.classList.add('playing');btn.textContent='🎶';
+    schedNoteIdx=0;
+    schedNextTime=audioCtx.currentTime+0.1;
+    masterGain.gain.setValueAtTime(0.001,audioCtx.currentTime);
+    masterGain.gain.linearRampToValueAtTime(0.35,audioCtx.currentTime+0.5);
+    musicTick();
+    vb.style.display='flex';
   } else {
-    btn.classList.remove('playing'); btn.textContent = '🎵';
-    btn.title = 'Play music';
-    stopAllNodes();
-    volBar.style.display = 'none';
+    btn.classList.remove('playing');btn.textContent='🎵';
+    clearTimeout(schedTimer);
+    masterGain.gain.setTargetAtTime(0.001,audioCtx.currentTime,0.4);
+    setTimeout(()=>{if(!musicPlaying)masterGain.gain.value=0;},1800);
+    vb.style.display='none';
   }
 }
 
-function setVolume(val) {
-  if (masterGain) masterGain.gain.setTargetAtTime(val / 250, audioCtx.currentTime, 0.05);
+function setVolume(val){
+  if(masterGain&&musicPlaying)masterGain.gain.setTargetAtTime(val/285,audioCtx.currentTime,0.1);
 }
 
-// Auto-hide the hint after 4s, show volume bar on hover of button
-setTimeout(() => {
-  const h = document.getElementById('music-hint');
-  if (h) { h.style.opacity = '0'; setTimeout(() => h.style.display = 'none', 1000); }
-}, 4000);
+// Auto-hide hint after 4s
+setTimeout(()=>{
+  const h=document.getElementById('music-hint');
+  if(h){h.style.opacity='0';setTimeout(()=>h.style.display='none',1000);}
+},4000);
 
 initS1();
 </script>

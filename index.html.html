@@ -175,6 +175,27 @@ h1{font-family:'Fredoka One',cursive;text-align:center;color:var(--navy);font-si
 .msg-input.ok-cell{border-bottom-color:var(--green);color:#70ffb8;background:rgba(61,170,112,.15);}
 .msg-input.err-cell{border-bottom-color:var(--red);color:#ff9a9a;animation:shk .28s;}
 
+/* ══ Q Answer Boxes ══ */
+.qans-wrap{display:flex;flex-wrap:wrap;gap:4px;margin:10px 0 4px;justify-content:center;align-items:flex-end}
+.qans-space{width:14px;flex-shrink:0}
+.qans-lbox{display:flex;flex-direction:column;align-items:center;gap:2px}
+.qans-inp{
+  width:26px;height:30px;padding:0;
+  background:#f0f4fa;border:none;border-bottom:3px solid #ccc;
+  border-radius:3px 3px 0 0;text-align:center;font-size:15px;font-weight:800;
+  color:var(--navy);text-transform:uppercase;font-family:'Nunito',sans-serif;
+  outline:none;cursor:text;transition:background .2s,border-color .2s;
+}
+.qans-inp:focus{background:#fffde7;border-bottom-color:var(--gold);}
+.qans-inp.ok-cell{border-bottom-color:var(--green);color:var(--green);background:#e6f8ee;}
+.qans-inp.err-cell{border-bottom-color:var(--red);color:var(--red);animation:shk .28s;}
+.qans-prefill{
+  width:26px;height:30px;display:flex;align-items:center;justify-content:center;
+  font-size:15px;font-weight:800;color:#aaa;background:#f5f5f5;
+  border-bottom:3px solid #ddd;border-radius:3px 3px 0 0;
+}
+.qans-num{font-size:10px;font-weight:800;color:#aaa;line-height:1;text-align:center}
+
 /* All-cipher unlocked banner */
 .cipher-all-known{
   background:linear-gradient(90deg,var(--green),var(--sky));
@@ -211,11 +232,6 @@ h1{font-family:'Fredoka One',cursive;text-align:center;color:var(--navy);font-si
 .qblock label{font-size:13px;font-weight:700;color:var(--navy);display:block;margin-bottom:6px}
 .ubadge{display:inline-block;font-size:9.5px;background:var(--warm);color:var(--navy);
   padding:2px 6px;border-radius:20px;font-weight:700;margin-left:4px}
-.qinp{width:100%;padding:7px 10px;font-size:13.5px;font-weight:700;
-  font-family:'Nunito',sans-serif;border:2px solid #ddd;border-radius:7px;
-  text-transform:uppercase;color:var(--navy);transition:border-color .2s}
-.qinp:focus{outline:none;border-color:var(--blue)}
-.qinp.answered{border-color:var(--green);background:#f0fff6;color:var(--green)}
 
 /* ══ Fireworks overlay ══ */
 #fw-overlay{
@@ -366,9 +382,9 @@ h1{font-family:'Fredoka One',cursive;text-align:center;color:var(--navy);font-si
   <div class="stage" id="s4">
     <div class="instr">
       <strong>🔐 Cryptogram Challenge</strong><br>
-      Jawab pertanyaan tentang Bernard untuk menemukan cipher key (angka mana = huruf apa).
-      Setelah tahu, <strong>klik cipher key</strong> untuk mengisi semua kotak dengan angka yang sama —
-      atau ketik langsung di kotak pesan! 🔍
+      Jawab pertanyaan tentang Bernard — tiap huruf jawaban ada di kotak dengan <em>kode angka</em> di bawahnya.
+      Kalau kamu benar, huruf itu otomatis muncul di semua kotak dengan angka yang sama!
+      Klik <strong>cipher key</strong> yang sudah terkuak untuk auto-fill pesan 🔍
     </div>
     <div class="msg-box">
       <div class="msg-title">📜 Secret Message — ketik huruf di tiap kotak</div>
@@ -422,7 +438,6 @@ const CW_WORDS = [
   {id:7,word:'REND', dir:'D',r:3,c:3,num:4,clue:'To tear apart forcefully (4)'},
 ];
 
-// FIX: CW_ANS[0][6] changed from '.' to 'D' so BRAND (5 letters) is fully visible
 const CW_ANS = [
   ['.','.',  'B','R','A','N','D'],
   ['.','.','R','.','.','E','.'],
@@ -535,7 +550,7 @@ function submitWord(){
 }
 
 // ═══════════════════════════════════════════════════
-//  STAGE 2 — Picture Math (3 random variants)
+//  STAGE 2 — Picture Math (3 variants, DIFFERENT answers)
 // ═══════════════════════════════════════════════════
 const IMG={
   b:'https://raw.githubusercontent.com/pipit10364/fotobernard/main/Bernard%20(12).png',
@@ -543,37 +558,52 @@ const IMG={
   m:'https://raw.githubusercontent.com/pipit10364/fotobernard/main/miffy%20pink.webp',
 };
 
-// B=26, C=10, M=8  →  B+C×M = 26+80 = 106
-let currentMathAnswer=106, currentMathExplain='';
+let currentMathAnswer=0, currentMathExplain='';
 
 function initS2(){
   const B=IMG.b,C=IMG.c,M=IMG.m;
+
+  // Each variant has DIFFERENT values for B, C, M → different final answers
   const SETS=[
-    // Variant A: triple sums
-    {rows:[
-      [{t:'i',s:B},{t:'o',s:'+'},{t:'i',s:B},{t:'o',s:'+'},{t:'i',s:B},{t:'e'},{t:'r',s:78}],
-      [{t:'i',s:C},{t:'o',s:'+'},{t:'i',s:C},{t:'o',s:'+'},{t:'i',s:B},{t:'e'},{t:'r',s:46}],
-      [{t:'i',s:M},{t:'o',s:'+'},{t:'i',s:M},{t:'o',s:'+'},{t:'i',s:C},{t:'e'},{t:'r',s:26}],
-      [{t:'i',s:B},{t:'o',s:'+'},{t:'i',s:C},{t:'o',s:'×'},{t:'i',s:M},{t:'e'},{t:'?'}],
-    ],explain:'Bernard(26) + COC(10) × Miffy(8) = 26 + 80 = 106'},
-    // Variant B: doubles & triple + multiply
-    {rows:[
-      [{t:'i',s:B},{t:'o',s:'+'},{t:'i',s:B},{t:'e'},{t:'r',s:52}],
-      [{t:'i',s:C},{t:'o',s:'+'},{t:'i',s:C},{t:'o',s:'+'},{t:'i',s:C},{t:'e'},{t:'r',s:30}],
-      [{t:'i',s:M},{t:'o',s:'×'},{t:'i',s:C},{t:'e'},{t:'r',s:80}],
-      [{t:'i',s:B},{t:'o',s:'+'},{t:'i',s:C},{t:'o',s:'×'},{t:'i',s:M},{t:'e'},{t:'?'}],
-    ],explain:'Bernard(26) + COC(10) × Miffy(8) = 26 + 80 = 106'},
-    // Variant C: subtract & small sums
-    {rows:[
-      [{t:'i',s:M},{t:'o',s:'+'},{t:'i',s:M},{t:'o',s:'+'},{t:'i',s:M},{t:'e'},{t:'r',s:24}],
-      [{t:'i',s:C},{t:'o',s:'+'},{t:'i',s:M},{t:'e'},{t:'r',s:18}],
-      [{t:'i',s:B},{t:'o',s:'-'},{t:'i',s:C},{t:'e'},{t:'r',s:16}],
-      [{t:'i',s:B},{t:'o',s:'+'},{t:'i',s:C},{t:'o',s:'×'},{t:'i',s:M},{t:'e'},{t:'?'}],
-    ],explain:'Bernard(26) + COC(10) × Miffy(8) = 26 + 80 = 106'},
+    // ── Variant A ── B=26, C=10, M=8  →  B + C×M = 26+80 = 106
+    {
+      rows:[
+        [{t:'i',s:B},{t:'o',s:'+'},{t:'i',s:B},{t:'o',s:'+'},{t:'i',s:B},{t:'e'},{t:'r',s:78}],
+        [{t:'i',s:C},{t:'o',s:'+'},{t:'i',s:C},{t:'o',s:'+'},{t:'i',s:B},{t:'e'},{t:'r',s:46}],
+        [{t:'i',s:M},{t:'o',s:'+'},{t:'i',s:M},{t:'o',s:'+'},{t:'i',s:C},{t:'e'},{t:'r',s:26}],
+        [{t:'i',s:B},{t:'o',s:'+'},{t:'i',s:C},{t:'o',s:'×'},{t:'i',s:M},{t:'e'},{t:'?'}],
+      ],
+      answer:106,
+      explain:'Bernard(26) + COC(10) × Miffy(8) = 26 + 80 = 106'
+    },
+    // ── Variant B ── B=15, C=9, M=7  →  B + C×M = 15+63 = 78
+    {
+      rows:[
+        [{t:'i',s:B},{t:'o',s:'+'},{t:'i',s:B},{t:'e'},{t:'r',s:30}],
+        [{t:'i',s:C},{t:'o',s:'+'},{t:'i',s:C},{t:'o',s:'+'},{t:'i',s:C},{t:'e'},{t:'r',s:27}],
+        [{t:'i',s:M},{t:'o',s:'+'},{t:'i',s:M},{t:'e'},{t:'r',s:14}],
+        [{t:'i',s:B},{t:'o',s:'+'},{t:'i',s:C},{t:'o',s:'×'},{t:'i',s:M},{t:'e'},{t:'?'}],
+      ],
+      answer:78,
+      explain:'Bernard(15) + COC(9) × Miffy(7) = 15 + 63 = 78'
+    },
+    // ── Variant C ── B=24, C=6, M=5  →  B + C×M = 24+30 = 54
+    {
+      rows:[
+        [{t:'i',s:B},{t:'o',s:'-'},{t:'i',s:C},{t:'e'},{t:'r',s:18}],
+        [{t:'i',s:M},{t:'o',s:'+'},{t:'i',s:C},{t:'e'},{t:'r',s:11}],
+        [{t:'i',s:C},{t:'o',s:'×'},{t:'i',s:M},{t:'e'},{t:'r',s:30}],
+        [{t:'i',s:B},{t:'o',s:'+'},{t:'i',s:C},{t:'o',s:'×'},{t:'i',s:M},{t:'e'},{t:'?'}],
+      ],
+      answer:54,
+      explain:'Bernard(24) + COC(6) × Miffy(5) = 24 + 30 = 54'
+    },
   ];
+
   const chosen=SETS[Math.floor(Math.random()*SETS.length)];
-  currentMathAnswer=106;
+  currentMathAnswer=chosen.answer;
   currentMathExplain=chosen.explain;
+
   const g=document.getElementById('mathGrid');g.innerHTML='';
   chosen.rows.forEach(row=>{
     const div=document.createElement('div');div.className='mrow';
@@ -582,8 +612,11 @@ function initS2(){
       if(item.t==='i'){el=document.createElement('img');el.src=item.s;el.className='mimg'}
       else if(item.t==='o'||item.t==='e'){el=document.createElement('span');el.className='mop';el.textContent=item.t==='e'?'=':item.s}
       else if(item.t==='r'){el=document.createElement('span');el.className='mres';el.textContent=item.s}
-      else{el=document.createElement('input');el.type='number';el.className='minp';el.id='mans';el.placeholder='?';
-           el.addEventListener('keydown',e=>{if(e.key==='Enter')checkMath()})}
+      else{
+        el=document.createElement('input');el.type='number';el.className='minp';el.id='mans';
+        el.placeholder='?';
+        el.addEventListener('keydown',e=>{if(e.key==='Enter')checkMath()});
+      }
       div.appendChild(el);
     });
     g.appendChild(div);
@@ -734,62 +767,66 @@ function sdkCheckComplete(){
 }
 
 // ═══════════════════════════════════════════════════
-//  STAGE 4 — Cryptogram (manual input per box)
+//  STAGE 4 — Cryptogram
 //
 //  Message: HAPPY BIRTHDAY BERNARD WISHING YOU ALL THE BEST
-//  Strict 1-to-1 cipher (letter → unique number):
-//    A=5  B=1  D=7  E=2  G=8  H=17  I=4
-//    L=6  N=9  O=3  P=16  R=13  S=21  T=11
-//    U=15  W=18  Y=12
-//  Total message boxes: 40 letters, 17 unique codes
+//  Cipher: A=5 B=1 D=7 E=2 G=8 H=17 I=4 L=6 N=9 O=3
+//          P=16 R=13 S=21 T=11 U=15 W=18 Y=12
+//
+//  Questions show PER-LETTER boxes with cipher codes below.
+//  Correctly typing any letter auto-fills all same-code boxes
+//  across ALL questions AND the secret message.
 // ═══════════════════════════════════════════════════
 
 const LMAP={A:5,B:1,D:7,E:2,G:8,H:17,I:4,L:6,N:9,O:3,P:16,R:13,S:21,T:11,U:15,W:18,Y:12};
-// Reverse: code → letter
 const LMAP_REV={};
 Object.entries(LMAP).forEach(([l,n])=>{LMAP_REV[n]=l;});
 
 const MESSAGE="HAPPY BIRTHDAY BERNARD WISHING YOU ALL THE BEST";
 const MSG_TOTAL=MESSAGE.replace(/ /g,'').length; // 40
 
+// Questions — display = string shown as answer boxes (spaces = word gaps)
+// Q_REVEALS = labels for the badge showing what new keys each question unlocks
 const QUESTIONS=[
   {q:"The polar bear who loves to laugh — what's his name?",
-   a:'BERNARDBEAR',display:'BERNARD BEAR',
-   reveals:['B','E','R','N','A','D'],
+   display:'BERNARD BEAR',
    hint:'His first name is also the name of this birthday boy 🐻'},
   {q:"Name of the MVP from Bernard's RoC team?",
-   a:'THEO',display:'THEO',
-   reveals:['T','H','O'],
+   display:'THEO',
    hint:'4 letters, starts with T'},
   {q:"The 2-word face cleanser Bernard keeps in his bathroom?",
-   a:'FACIALWASH',display:'FACIAL WASH',
-   reveals:['I','L','W','S'],
+   display:'FACIAL WASH',
    hint:'Think skincare routine 🧴'},
   {q:"Bernard's favorite superhero?",
-   a:'DRSTRANGE',display:'DR STRANGE',
-   reveals:['G'],
+   display:'DR STRANGE',
    hint:'Sorcerer Supreme from Marvel 🪄'},
   {q:"Bernard's MBTI type?",
-   a:'INFP',display:'INFP',
-   reveals:['P'],
+   display:'INFP',
    hint:'The Mediator personality type'},
   {q:"One of Bernard's perfumes, by Armani — 3 words?",
-   a:'STRONGERWITHYOU',display:'STRONGER WITH YOU',
-   reveals:['U','Y'],
+   display:'STRONGER WITH YOU',
    hint:'Armani, 3 words, starts with "Stronger…" 💙'},
 ];
+const Q_REVEALS=[
+  ['B','E','R','N','A','D'],
+  ['T','H','O'],
+  ['I','L','W','S'],
+  ['G'],
+  ['P'],
+  ['U','Y'],
+];
 
-let cipherRevealed=new Set(), answeredCnt=0, filledCorrect=0;
-let isUpdatingInputs=false; // prevent re-entrant propagation
+let cipherRevealed=new Set(), answeredQ=new Set(), answeredCnt=0;
+let isUpdatingInputs=false;
 
 function initS4(){
-  cipherRevealed=new Set(); answeredCnt=0; filledCorrect=0;
+  cipherRevealed=new Set(); answeredQ=new Set(); answeredCnt=0;
   document.getElementById('ac').textContent='0';
   document.getElementById('p4').style.width='0%';
   document.getElementById('unlockBtn').disabled=true;
   document.getElementById('cipherAllKnown').style.display='none';
 
-  // ── Build message display with INPUT boxes ──
+  // ── Build secret message input boxes ──
   const mw=document.getElementById('msgWords');mw.innerHTML='';
   MESSAGE.split(' ').forEach(word=>{
     const wd=document.createElement('div');wd.className='msg-word';
@@ -801,9 +838,8 @@ function initS4(){
       inp.className='msg-input';
       inp.dataset.num=code;
       inp.dataset.answer=letter;
-      inp.addEventListener('input',e=>onMsgInput(e,code));
+      inp.addEventListener('input',e=>onMsgInput(e,code,letter));
       inp.addEventListener('keydown',e=>{
-        // Allow arrow keys to jump to next/prev input
         if(e.key==='ArrowRight'||e.key==='Tab'){
           e.preventDefault();
           const all=Array.from(document.querySelectorAll('.msg-input'));
@@ -823,7 +859,7 @@ function initS4(){
   });
   updateMsgProgress();
 
-  // ── Build cipher key slots ──
+  // ── Build cipher key panel ──
   const ckg=document.getElementById('ckGrid');ckg.innerHTML='';
   Object.entries(LMAP)
     .sort((a,b)=>a[1]-b[1])
@@ -834,61 +870,217 @@ function initS4(){
       slot.innerHTML=`<span class="ck-n">${code}</span><span class="ck-l">?</span>`;
       slot.addEventListener('click',()=>{
         if(!slot.classList.contains('known'))return;
-        applyKey(code,letter);
+        propagateLetter(code, letter, null);
         slot.classList.add('applied');
         setTimeout(()=>slot.classList.remove('applied'),600);
       });
       ckg.appendChild(slot);
     });
 
-  // ── Build questions ──
+  // ── Build questions with per-letter answer boxes ──
   const qc=document.getElementById('qCont');qc.innerHTML='';
   QUESTIONS.forEach((item,i)=>{
-    const div=document.createElement('div');div.className='qblock';div.id=`qb${i}`;
-    div.innerHTML=`
-      <label>${i+1}. ${item.q}
-        <span class="ubadge">🔓 ${item.reveals.map(l=>`${l}=${LMAP[l]}`).join(', ')}</span>
-      </label>
-      <div style="display:flex;gap:8px;align-items:center">
-        <input type="text" class="qinp" id="qi${i}" placeholder="Ketik jawaban…" autocomplete="off" spellcheck="false" style="flex:1">
-        <button onclick="showHint(${i})" style="font-size:12px;padding:6px 10px;border:2px solid #ddd;border-radius:7px;background:#f9f9f9;cursor:pointer;color:#888;font-weight:700;white-space:nowrap">💡 Hint</button>
-      </div>
-      <div id="hint${i}" style="display:none;font-size:12px;color:var(--blue);font-weight:600;margin-top:5px;padding:5px 8px;background:#eef4ff;border-radius:6px">
-        ${item.hint}
-      </div>`;
+    const reveals=Q_REVEALS[i];
+    const badgeText=reveals.map(l=>`${l}=${LMAP[l]}`).join(', ');
+    const div=document.createElement('div');
+    div.className='qblock';div.id=`qb${i}`;
+
+    const labelRow=document.createElement('div');
+    labelRow.style.cssText='display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px';
+    labelRow.innerHTML=`
+      <span style="font-size:13px;font-weight:700;color:var(--navy)">
+        ${i+1}. ${item.q}
+        <span class="ubadge">🔓 ${badgeText}</span>
+      </span>
+      <button onclick="showHint(${i})"
+        style="font-size:11px;padding:5px 9px;border:2px solid #ddd;border-radius:7px;
+               background:#f9f9f9;cursor:pointer;color:#888;font-weight:700;white-space:nowrap;flex-shrink:0">
+        💡 Hint
+      </button>`;
+    div.appendChild(labelRow);
+
+    const hintDiv=document.createElement('div');
+    hintDiv.id=`hint${i}`;
+    hintDiv.style.cssText='display:none;font-size:12px;color:var(--blue);font-weight:600;margin-bottom:6px;padding:5px 8px;background:#eef4ff;border-radius:6px';
+    hintDiv.textContent=item.hint;
+    div.appendChild(hintDiv);
+
+    // Per-letter answer boxes
+    const ansWrap=buildAnswerBoxes(item.display,i);
+    div.appendChild(ansWrap);
+
     qc.appendChild(div);
-    document.getElementById(`qi${i}`).addEventListener('input',e=>checkQ(e.target,item,i));
   });
 }
 
-function onMsgInput(e, code){
+// Build a row of individual letter-input boxes for a question answer
+function buildAnswerBoxes(displayStr, qIdx){
+  const wrap=document.createElement('div');
+  wrap.className='qans-wrap';wrap.id=`qans${qIdx}`;
+
+  displayStr.split('').forEach((ch,pos)=>{
+    if(ch===' '){
+      const sp=document.createElement('div');sp.className='qans-space';
+      wrap.appendChild(sp);return;
+    }
+    const lb=document.createElement('div');lb.className='qans-lbox';
+    const code=LMAP[ch]; // undefined if letter not in cipher
+
+    if(!code){
+      // Letter not in cipher — show pre-filled, non-editable
+      const disp=document.createElement('div');
+      disp.className='qans-prefill';
+      disp.textContent=ch;
+      const nm=document.createElement('div');nm.className='qans-num';nm.textContent='—';
+      lb.appendChild(disp);lb.appendChild(nm);
+      wrap.appendChild(lb);
+      return;
+    }
+
+    const inp=document.createElement('input');
+    inp.type='text';inp.maxLength=1;
+    inp.className='qans-inp';
+    inp.dataset.answer=ch;
+    inp.dataset.code=code;
+    inp.dataset.qidx=qIdx;
+    inp.dataset.pos=pos;
+
+    // If cipher already revealed, auto-fill
+    if(cipherRevealed.has(ch)){
+      inp.value=ch;inp.classList.add('ok-cell');
+    }
+
+    inp.addEventListener('input',e=>onQAnsInput(e,qIdx));
+    inp.addEventListener('keydown',e=>{
+      if((e.key==='ArrowRight'||e.key==='Tab')&&!e.shiftKey){
+        e.preventDefault();
+        const all=Array.from(document.querySelectorAll(`.qans-inp[data-qidx="${qIdx}"]`));
+        const idx=all.indexOf(inp);
+        if(idx<all.length-1)all[idx+1].focus();
+      } else if(e.key==='ArrowLeft'||(e.key==='Tab'&&e.shiftKey)){
+        e.preventDefault();
+        const all=Array.from(document.querySelectorAll(`.qans-inp[data-qidx="${qIdx}"]`));
+        const idx=all.indexOf(inp);
+        if(idx>0)all[idx-1].focus();
+      }
+    });
+
+    const nm=document.createElement('div');nm.className='qans-num';nm.textContent=code;
+    lb.appendChild(inp);lb.appendChild(nm);
+    wrap.appendChild(lb);
+  });
+
+  return wrap;
+}
+
+// User types in the SECRET MESSAGE boxes
+function onMsgInput(e, code, correctLetter){
   if(isUpdatingInputs)return;
   const raw=e.target.value.toUpperCase().replace(/[^A-Z]/g,'');
-  const letter=raw.slice(-1); // take last typed char
-  isUpdatingInputs=true;
-  // Propagate to ALL boxes with same code
-  document.querySelectorAll(`.msg-input[data-num="${code}"]`).forEach(inp=>{
-    inp.value=letter;
-    inp.classList.remove('ok-cell','err-cell');
-    if(letter){
-      if(letter===inp.dataset.answer) inp.classList.add('ok-cell');
-      else inp.classList.add('err-cell');
-    }
-  });
-  isUpdatingInputs=false;
-  updateMsgProgress();
+  const letter=raw.slice(-1);
+  if(letter===correctLetter){
+    revealCipherKey(correctLetter);
+    propagateLetter(code, correctLetter, e.target);
+  } else {
+    e.target.value=letter;
+    e.target.classList.remove('ok-cell');
+    e.target.classList.toggle('err-cell',letter.length>0);
+    updateMsgProgress();
+  }
 }
 
-function applyKey(code, letter){
-  // Auto-fill all boxes with this code with the correct letter
+// User types in a QUESTION answer box
+function onQAnsInput(e, qIdx){
+  if(isUpdatingInputs)return;
+  const inp=e.target;
+  const raw=inp.value.toUpperCase().replace(/[^A-Z]/g,'');
+  const letter=raw.slice(-1);
+  inp.value=letter;
+  inp.classList.remove('ok-cell','err-cell');
+  if(!letter){checkQComplete(qIdx);return;}
+
+  const correct=inp.dataset.answer;
+  const code=parseInt(inp.dataset.code);
+  if(letter===correct){
+    revealCipherKey(correct);
+    propagateLetter(code, correct, inp);
+    // Auto-advance to next empty box in this question
+    setTimeout(()=>{
+      const all=Array.from(document.querySelectorAll(`.qans-inp[data-qidx="${qIdx}"]`));
+      const idx=all.indexOf(inp);
+      const nextEmpty=all.slice(idx+1).find(b=>!b.value);
+      if(nextEmpty)nextEmpty.focus();
+      else if(idx<all.length-1)all[idx+1].focus();
+    },50);
+  } else {
+    inp.classList.add('err-cell');
+    checkQComplete(qIdx);
+  }
+}
+
+// Reveal a letter in the cipher key panel
+function revealCipherKey(letter){
+  if(cipherRevealed.has(letter))return;
+  cipherRevealed.add(letter);
+  const slot=document.getElementById(`ck${letter}`);
+  if(slot){
+    slot.querySelector('.ck-l').textContent=letter;
+    slot.classList.add('known');
+  }
+  if(cipherRevealed.size===Object.keys(LMAP).length){
+    document.getElementById('cipherAllKnown').style.display='block';
+  }
+}
+
+// Propagate a correctly-identified letter to ALL boxes (message + all questions) with same cipher code
+function propagateLetter(code, letter, sourceEl){
   isUpdatingInputs=true;
+  // Fill message boxes
   document.querySelectorAll(`.msg-input[data-num="${code}"]`).forEach(inp=>{
+    if(inp===sourceEl)return;
     inp.value=letter;
     inp.classList.remove('err-cell');
     inp.classList.add('ok-cell');
   });
+  // Fill question answer boxes across ALL questions
+  document.querySelectorAll(`.qans-inp[data-code="${code}"]`).forEach(inp=>{
+    if(inp===sourceEl)return;
+    inp.value=letter;
+    inp.classList.remove('err-cell');
+    inp.classList.add('ok-cell');
+  });
+  // Mark the source box as ok too
+  if(sourceEl){
+    sourceEl.value=letter;
+    sourceEl.classList.remove('err-cell');
+    sourceEl.classList.add('ok-cell');
+  }
   isUpdatingInputs=false;
   updateMsgProgress();
+  // Check if any questions are now complete
+  for(let i=0;i<QUESTIONS.length;i++)checkQComplete(i);
+}
+
+// Check if all editable boxes in a question are correctly filled
+function checkQComplete(qIdx){
+  if(answeredQ.has(qIdx))return;
+  const boxes=Array.from(document.querySelectorAll(`.qans-inp[data-qidx="${qIdx}"]`));
+  if(!boxes.length)return;
+  const allCorrect=boxes.every(b=>b.value.toUpperCase()===b.dataset.answer);
+  if(!allCorrect)return;
+
+  answeredQ.add(qIdx);
+  document.getElementById(`qb${qIdx}`).classList.add('answered');
+  boxes.forEach(b=>{b.disabled=true;});
+  const hintBtn=document.querySelector(`#qb${qIdx} button`);
+  if(hintBtn)hintBtn.style.display='none';
+
+  answeredCnt++;
+  document.getElementById('ac').textContent=answeredCnt;
+  document.getElementById('p4').style.width=(answeredCnt/6*100)+'%';
+  if(answeredCnt===6){
+    document.getElementById('cipherAllKnown').style.display='block';
+  }
 }
 
 function updateMsgProgress(){
@@ -896,7 +1088,6 @@ function updateMsgProgress(){
   document.querySelectorAll('.msg-input').forEach(inp=>{
     if(inp.value.toUpperCase()===inp.dataset.answer)correct++;
   });
-  filledCorrect=correct;
   document.getElementById('msgProgLbl').textContent=`Terisi: ${correct} / ${MSG_TOTAL} huruf`;
   if(correct===MSG_TOTAL){
     document.getElementById('unlockBtn').disabled=false;
@@ -906,34 +1097,6 @@ function updateMsgProgress(){
 function showHint(i){
   const h=document.getElementById(`hint${i}`);
   h.style.display=h.style.display==='none'?'block':'none';
-}
-
-function checkQ(inp,item,idx){
-  if(inp.value.toUpperCase().replace(/[\s.]/g,'')!==item.a)return;
-  inp.classList.add('answered');inp.disabled=true;
-  document.getElementById(`qb${idx}`).classList.add('answered');
-  const hintBtn=document.getElementById(`qb${idx}`).querySelector('button');
-  if(hintBtn)hintBtn.style.display='none';
-
-  // Reveal cipher key entries
-  item.reveals.forEach(l=>{
-    if(cipherRevealed.has(l))return;
-    cipherRevealed.add(l);
-    const slot=document.getElementById(`ck${l}`);
-    if(slot){
-      slot.querySelector('.ck-l').textContent=l;
-      slot.classList.add('known');
-    }
-  });
-
-  answeredCnt++;
-  document.getElementById('ac').textContent=answeredCnt;
-  document.getElementById('p4').style.width=(answeredCnt/6*100)+'%';
-
-  if(answeredCnt===6){
-    // Show "all unlocked" banner
-    document.getElementById('cipherAllKnown').style.display='block';
-  }
 }
 
 // ═══════════════════════════════════════════════════
@@ -1009,8 +1172,6 @@ function goS4(){document.getElementById('s3').classList.remove('active');documen
 
 // ═══════════════════════════════════════════════════
 //  🎵 Background Music — Lookahead Web Audio Scheduler
-//  Standard pattern: schedule notes ~400ms ahead, tick every 150ms
-//  Avoids the "schedule all at once" bug from before
 // ═══════════════════════════════════════════════════
 
 let audioCtx=null,masterGain=null,musicPlaying=false;
@@ -1022,7 +1183,6 @@ const MF={
 };
 const MBPM=128,MBEAT=60/MBPM;
 
-// Cheerful 8-bar looping melody in C major
 const MSEQ=[
   [MF.E4,.5],[MF.G4,.5],[MF.C5,1],[MF.B4,.5],[MF.A4,.5],
   [MF.G4,1],[MF.E4,.5],[MF.G4,.5],[MF.A4,2],
@@ -1103,6 +1263,21 @@ setTimeout(()=>{
   const h=document.getElementById('music-hint');
   if(h){h.style.opacity='0';setTimeout(()=>h.style.display='none',1000);}
 },4000);
+
+// ═══════════════════════════════════════════════════
+//  Auto-start music on first user interaction
+//  (browsers block autoplay until the user has clicked/typed)
+// ═══════════════════════════════════════════════════
+let musicAutoStarted=false;
+function tryAutoplay(){
+  if(musicAutoStarted)return;
+  musicAutoStarted=true;
+  // Small delay so the gesture handler fully completes first
+  setTimeout(()=>{ if(!musicPlaying) toggleMusic(); }, 200);
+}
+document.addEventListener('click',tryAutoplay,{once:true});
+document.addEventListener('keydown',tryAutoplay,{once:true});
+document.addEventListener('touchstart',tryAutoplay,{once:true});
 
 initS1();
 </script>

@@ -428,27 +428,30 @@ h1{font-family:'Fredoka One',cursive;text-align:center;color:var(--navy);font-si
 // ═══════════════════════════════════════════════════
 
 const CW_WORDS = [
-  {id:0,word:'BRAND',dir:'A',r:0,c:2,num:1,clue:'What makes a product recognizable (5)'},
-  {id:1,word:'BEAR', dir:'A',r:3,c:0,num:3,clue:'Large furry forest animal (4)'},
-  {id:2,word:'DEN',  dir:'A',r:4,c:2,num:5,clue:'A cozy private room (3)'},
-  {id:3,word:'NERD', dir:'A',r:6,c:0,num:6,clue:'A highly intellectual person (4)'},
-  {id:4,word:'BREAD',dir:'D',r:0,c:2,num:1,clue:'Baked loaf made from flour (5)'},
-  {id:5,word:'NEAR', dir:'D',r:0,c:5,num:2,clue:'Not far away (4)'},
-  {id:6,word:'BARN', dir:'D',r:3,c:0,num:3,clue:'Farm storage building (4)'},
-  {id:7,word:'REND', dir:'D',r:3,c:3,num:4,clue:'To tear apart forcefully (4)'},
+  {id:0,word:'BRAND',dir:'A',r:0,c:1,num:1,clue:'What makes a product recognizable (5)'},
+  {id:1,word:'BREAD',dir:'A',r:3,c:0,num:3,clue:'Baked loaf made from flour (5)'},
+  {id:2,word:'NEAR', dir:'A',r:6,c:0,num:5,clue:'Not far away (4)'},
+  {id:3,word:'REND', dir:'A',r:8,c:1,num:7,clue:'To tear apart forcefully (4)'},
+  {id:4,word:'NERD', dir:'D',r:0,c:4,num:2,clue:'A highly intellectual person (4)'},
+  {id:5,word:'BARN', dir:'D',r:3,c:0,num:3,clue:'Farm storage building (4)'},
+  {id:6,word:'BRAN', dir:'D',r:5,c:3,num:4,clue:'Outer husk of grain, rich in fibre (4)'},
+  {id:7,word:'EARN', dir:'D',r:6,c:1,num:6,clue:'To receive money for your work (4)'},
 ];
 
 const CW_ANS = [
-  ['.','.',  'B','R','A','N','D'],
-  ['.','.','R','.','.','E','.'],
-  ['.','.','E','.','.','A','.'],
-  ['B','E','A','R','.','R','.'],
-  ['A','.','D','E','N','.','.'],
-  ['R','.','.','N','.','.', '.'],
-  ['N','E','R','D','.','.', '.'],
+  ['.','B','R','A','N','D'],   // row 0 — BRAND across
+  ['.','.','.','.','E','.'],   // row 1
+  ['.','.','.','.','R','.'],   // row 2
+  ['B','R','E','A','D','.'],   // row 3 — BREAD across
+  ['A','.','.','.','.','.'],   // row 4
+  ['R','.','.',  'B','.','.'],   // row 5
+  ['N','E','A','R','.','.'],   // row 6 — NEAR across
+  ['.','A','.','A','.','.'],   // row 7
+  ['.','R','E','N','D','.'],   // row 8 — REND across
+  ['.','N','.','.','.','.'],   // row 9
 ];
-const CW_ROWS=7,CW_COLS=7;
-const CW_NUMS={'0,2':1,'0,5':2,'3,0':3,'3,3':4,'4,2':5,'6,0':6};
+const CW_ROWS=10,CW_COLS=6;
+const CW_NUMS={'0,1':1,'0,4':2,'3,0':3,'5,3':4,'6,0':5,'6,1':6,'8,1':7};
 
 let cwSolved=new Set(),cwActive=null,cwDom=[];
 

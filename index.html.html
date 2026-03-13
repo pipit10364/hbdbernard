@@ -383,8 +383,8 @@ h1{font-family:'Fredoka One',cursive;text-align:center;color:var(--navy);font-si
     <div class="instr">
       <strong>🔐 Cryptogram Challenge</strong><br>
       Jawab pertanyaan tentang Bernard — tiap huruf jawaban ada di kotak dengan <em>kode angka</em> di bawahnya.
-      Kalau kamu benar, huruf itu otomatis muncul di semua kotak dengan angka yang sama!
-      Klik <strong>cipher key</strong> yang sudah terkuak untuk auto-fill pesan 🔍
+      Kalau kamu benar, huruf itu muncul di <strong>cipher key</strong> sebagai referensi.
+      Gunakan cipher key untuk mengisi secret message di atas — ketik sendiri satu per satu! ✍️
     </div>
     <div class="msg-box">
       <div class="msg-title">📜 Secret Message — ketik huruf di tiap kotak</div>
@@ -392,11 +392,11 @@ h1{font-family:'Fredoka One',cursive;text-align:center;color:var(--navy);font-si
       <div class="msg-prog-lbl" id="msgProgLbl">Terisi: 0 / 40 huruf</div>
     </div>
     <div class="cipher-all-known" id="cipherAllKnown">
-      🗝 Semua cipher key terkuak! Klik tiap key di bawah untuk auto-fill pesan →
+      🗝 Semua cipher key terkuak! Saatnya isi secret message di atas — kamu sudah tahu semua kodenya! 🔐
     </div>
     <!-- Cipher key tracker -->
     <div class="cipher-key">
-      <div class="ck-title">🗝 Cipher Key — klik yang sudah terkuak untuk isi pesan</div>
+      <div class="ck-title">🗝 Cipher Key — gunakan sebagai referensi saat mengisi kotak!</div>
       <div class="ck-grid" id="ckGrid"></div>
     </div>
     <div id="qCont"></div>
@@ -817,7 +817,6 @@ const Q_REVEALS=[
 ];
 
 let cipherRevealed=new Set(), answeredQ=new Set(), answeredCnt=0;
-let isUpdatingInputs=false;
 
 function initS4(){
   cipherRevealed=new Set(); answeredQ=new Set(); answeredCnt=0;
@@ -866,14 +865,7 @@ function initS4(){
     .forEach(([letter,code])=>{
       const slot=document.createElement('div');
       slot.className='ck-slot';slot.id=`ck${letter}`;
-      slot.title=`Klik untuk isi semua kotak angka ${code}`;
       slot.innerHTML=`<span class="ck-n">${code}</span><span class="ck-l">?</span>`;
-      slot.addEventListener('click',()=>{
-        if(!slot.classList.contains('known'))return;
-        propagateLetter(code, letter, null);
-        slot.classList.add('applied');
-        setTimeout(()=>slot.classList.remove('applied'),600);
-      });
       ckg.appendChild(slot);
     });
 
@@ -973,52 +965,53 @@ function buildAnswerBoxes(displayStr, qIdx){
   return wrap;
 }
 
-// User types in the SECRET MESSAGE boxes
+// User types in the SECRET MESSAGE boxes — manual only, no auto-fill
 function onMsgInput(e, code, correctLetter){
-  if(isUpdatingInputs)return;
   const raw=e.target.value.toUpperCase().replace(/[^A-Z]/g,'');
   const letter=raw.slice(-1);
+  e.target.value=letter;
+  e.target.classList.remove('ok-cell','err-cell');
+  if(!letter){updateMsgProgress();return;}
   if(letter===correctLetter){
+    e.target.classList.add('ok-cell');
     revealCipherKey(correctLetter);
-    propagateLetter(code, correctLetter, e.target);
+    // Auto-advance to next unfilled message box
+    const all=Array.from(document.querySelectorAll('.msg-input'));
+    const idx=all.indexOf(e.target);
+    const nextEmpty=all.slice(idx+1).find(b=>!b.classList.contains('ok-cell'));
+    if(nextEmpty)setTimeout(()=>nextEmpty.focus(),50);
   } else {
-    e.target.value=letter;
-    e.target.classList.remove('ok-cell');
-    e.target.classList.toggle('err-cell',letter.length>0);
-    updateMsgProgress();
+    e.target.classList.add('err-cell');
   }
+  updateMsgProgress();
 }
 
-// User types in a QUESTION answer box
+// User types in a QUESTION answer box — manual only, no auto-fill
 function onQAnsInput(e, qIdx){
-  if(isUpdatingInputs)return;
   const inp=e.target;
   const raw=inp.value.toUpperCase().replace(/[^A-Z]/g,'');
   const letter=raw.slice(-1);
   inp.value=letter;
   inp.classList.remove('ok-cell','err-cell');
   if(!letter){checkQComplete(qIdx);return;}
-
   const correct=inp.dataset.answer;
-  const code=parseInt(inp.dataset.code);
   if(letter===correct){
+    inp.classList.add('ok-cell');
     revealCipherKey(correct);
-    propagateLetter(code, correct, inp);
     // Auto-advance to next empty box in this question
     setTimeout(()=>{
       const all=Array.from(document.querySelectorAll(`.qans-inp[data-qidx="${qIdx}"]`));
       const idx=all.indexOf(inp);
-      const nextEmpty=all.slice(idx+1).find(b=>!b.value);
+      const nextEmpty=all.slice(idx+1).find(b=>!b.classList.contains('ok-cell'));
       if(nextEmpty)nextEmpty.focus();
-      else if(idx<all.length-1)all[idx+1].focus();
     },50);
   } else {
     inp.classList.add('err-cell');
-    checkQComplete(qIdx);
   }
+  checkQComplete(qIdx);
 }
 
-// Reveal a letter in the cipher key panel
+// Reveal a letter in the cipher key panel (reference only — no auto-fill on click)
 function revealCipherKey(letter){
   if(cipherRevealed.has(letter))return;
   cipherRevealed.add(letter);
@@ -1026,39 +1019,11 @@ function revealCipherKey(letter){
   if(slot){
     slot.querySelector('.ck-l').textContent=letter;
     slot.classList.add('known');
+    slot.title=`${LMAP[letter]} = ${letter}  (type it yourself!)`;
   }
   if(cipherRevealed.size===Object.keys(LMAP).length){
     document.getElementById('cipherAllKnown').style.display='block';
   }
-}
-
-// Propagate a correctly-identified letter to ALL boxes (message + all questions) with same cipher code
-function propagateLetter(code, letter, sourceEl){
-  isUpdatingInputs=true;
-  // Fill message boxes
-  document.querySelectorAll(`.msg-input[data-num="${code}"]`).forEach(inp=>{
-    if(inp===sourceEl)return;
-    inp.value=letter;
-    inp.classList.remove('err-cell');
-    inp.classList.add('ok-cell');
-  });
-  // Fill question answer boxes across ALL questions
-  document.querySelectorAll(`.qans-inp[data-code="${code}"]`).forEach(inp=>{
-    if(inp===sourceEl)return;
-    inp.value=letter;
-    inp.classList.remove('err-cell');
-    inp.classList.add('ok-cell');
-  });
-  // Mark the source box as ok too
-  if(sourceEl){
-    sourceEl.value=letter;
-    sourceEl.classList.remove('err-cell');
-    sourceEl.classList.add('ok-cell');
-  }
-  isUpdatingInputs=false;
-  updateMsgProgress();
-  // Check if any questions are now complete
-  for(let i=0;i<QUESTIONS.length;i++)checkQComplete(i);
 }
 
 // Check if all editable boxes in a question are correctly filled
@@ -1171,27 +1136,92 @@ function goS3(){document.getElementById('s2').classList.remove('active');documen
 function goS4(){document.getElementById('s3').classList.remove('active');document.getElementById('s4').classList.add('active');setDots(4);initS4();document.removeEventListener('keydown',sdkKeydown)}
 
 // ═══════════════════════════════════════════════════
-//  🎵 Background Music — Lookahead Web Audio Scheduler
+//  🎵 Background Music — Fun Chiptune (melody + bass)
+//  Square-wave lead, sawtooth bass, BPM 160
 // ═══════════════════════════════════════════════════
 
 let audioCtx=null,masterGain=null,musicPlaying=false;
-let schedNoteIdx=0,schedNextTime=0,schedTimer=null;
+let melIdx=0,melNext=0,bassIdx=0,bassNext=0,schedTimer=null;
 
-const MF={
+// Note frequencies
+const N={
+  C3:130.81,D3:146.83,E3:164.81,F3:174.61,G3:196,A3:220,B3:246.94,
   C4:261.63,D4:293.66,E4:329.63,F4:349.23,G4:392,A4:440,B4:493.88,
-  C5:523.25,D5:587.33,E5:659.25,G5:784,A5:880
+  C5:523.25,D5:587.33,E5:659.25,F5:698.46,G5:784,A5:880,B5:987.77,
+  C6:1046.5,_:0 // _ = rest
 };
-const MBPM=128,MBEAT=60/MBPM;
+const BPM=160, B=60/BPM; // beat duration in seconds
 
-const MSEQ=[
-  [MF.E4,.5],[MF.G4,.5],[MF.C5,1],[MF.B4,.5],[MF.A4,.5],
-  [MF.G4,1],[MF.E4,.5],[MF.G4,.5],[MF.A4,2],
-  [MF.A4,.5],[MF.B4,.5],[MF.C5,1],[MF.D5,.5],[MF.C5,.5],
-  [MF.B4,1],[MF.G4,.5],[MF.A4,.5],[MF.G4,2],
-  [MF.C5,.5],[MF.C5,.5],[MF.B4,.5],[MF.A4,.5],[MF.G4,1],[MF.E4,1],
-  [MF.F4,.5],[MF.G4,.5],[MF.A4,.5],[MF.G4,.5],[MF.F4,1],[MF.E4,1],
-  [MF.D4,.5],[MF.E4,.5],[MF.F4,1],[MF.E4,.5],[MF.D4,.5],
-  [MF.C4,1],[MF.E4,.5],[MF.G4,.5],[MF.C4,2],
+// Upbeat chiptune melody — 4 phrases of 8 bars each, then repeats
+const MEL=[
+  // ── Phrase A: punchy ascending hooks ──
+  [N.E5,.25],[N.G5,.25],[N.C5,.5],[N.E5,.25],[N.D5,.25],
+  [N.C5,.5],[N.G4,.5],[N._,.5],[N.E5,.5],
+  [N.F5,.25],[N.A5,.25],[N.G5,.5],[N.F5,.25],[N.E5,.25],
+  [N.D5,1],[N._,.5],[N.C5,.5],
+  [N.E5,.25],[N.G5,.25],[N.A5,.5],[N.G5,.25],[N.E5,.25],
+  [N.C5,.5],[N.D5,.5],[N.E5,1],
+  [N.F5,.25],[N.G5,.25],[N.A5,.25],[N.G5,.25],[N.F5,.5],[N.E5,.5],
+  [N.D5,.5],[N.C5,1],[N._,.5],
+  // ── Phrase B: bouncy arpeggio feel ──
+  [N.C5,.25],[N.E5,.25],[N.G5,.25],[N.C6,.25],[N.B5,.5],[N.A5,.5],
+  [N.G5,.5],[N.E5,.25],[N.D5,.25],[N.C5,1],
+  [N.A4,.25],[N.C5,.25],[N.E5,.25],[N.A5,.25],[N.G5,.5],[N.F5,.5],
+  [N.E5,.5],[N.D5,.25],[N.C5,.25],[N.B4,1],
+  [N.C5,.25],[N.D5,.25],[N.E5,.5],[N.G5,.25],[N.F5,.25],[N.E5,.5],
+  [N.D5,.25],[N.E5,.25],[N.F5,.5],[N.G5,1],
+  [N.A5,.25],[N.G5,.25],[N.F5,.25],[N.E5,.25],[N.D5,.5],[N.C5,.5],
+  [N.G4,.5],[N.C5,1],[N._,.5],
+  // ── Phrase C: high energy with jumps ──
+  [N.G5,.5],[N.G5,.25],[N.A5,.25],[N.B5,.5],[N.G5,.5],
+  [N.A5,.5],[N.F5,.5],[N.G5,1],
+  [N.E5,.5],[N.E5,.25],[N.F5,.25],[N.G5,.5],[N.E5,.5],
+  [N.F5,.5],[N.D5,.5],[N.E5,1],
+  [N.C5,.25],[N.E5,.25],[N.G5,.25],[N.E5,.25],[N.C5,.25],[N.E5,.25],[N.G5,.25],[N.C6,.25],
+  [N.B5,.25],[N.A5,.25],[N.G5,.5],[N.F5,.25],[N.E5,.25],[N.D5,.5],
+  [N.E5,.25],[N.G5,.25],[N.C5,.5],[N.E5,.25],[N.D5,.25],[N.C5,.5],
+  [N.G4,1],[N._,.5],[N.C5,.5],
+  // ── Phrase D: melodic wind-down then big finish ──
+  [N.E5,.5],[N.D5,.5],[N.C5,.5],[N.B4,.5],
+  [N.A4,.5],[N.G4,.5],[N.F4,.5],[N.E4,.5],
+  [N.G4,.25],[N.A4,.25],[N.B4,.25],[N.C5,.25],[N.D5,.5],[N.E5,.5],
+  [N.F5,.25],[N.E5,.25],[N.D5,.5],[N.C5,1],
+  [N.C5,.25],[N.E5,.25],[N.G5,.25],[N.C6,.25],[N.G5,.25],[N.E5,.25],[N.C5,.25],[N.G4,.25],
+  [N.A4,.25],[N.C5,.25],[N.E5,.25],[N.A5,.25],[N.E5,.25],[N.C5,.25],[N.A4,.25],[N.E4,.25],
+  [N.G4,.25],[N.B4,.25],[N.D5,.25],[N.G5,.25],[N.F5,.5],[N.E5,.5],
+  [N.C5,2],
+];
+
+// Walking bass — simple, punchy, one note per half-bar
+const BASS=[
+  // Phrase A (C major feel, each 2 beats)
+  [N.C3,1],[N.G3,1],[N.A3,1],[N.E3,1],
+  [N.F3,1],[N.C3,1],[N.G3,1],[N.G3,.5],[N.B3,.5],
+  [N.C3,1],[N.G3,1],[N.F3,1],[N.C3,1],
+  [N.G3,1],[N.D3,1],[N.G3,.5],[N.B3,.5],[N.C3,1],
+  // Phrase B
+  [N.C3,1],[N.E3,.5],[N.G3,.5],[N.A3,1],[N.E3,1],
+  [N.G3,1],[N.D3,1],[N.C3,1],[N.G3,1],
+  [N.A3,1],[N.E3,.5],[N.C3,.5],[N.F3,1],[N.C3,1],
+  [N.G3,1],[N.G3,.5],[N.D3,.5],[N.C3,1],[N.G3,1],
+  // Phrase C
+  [N.G3,1],[N.G3,1],[N.A3,.5],[N.G3,.5],[N.G3,1],
+  [N.A3,1],[N.F3,1],[N.G3,1],[N.G3,1],
+  [N.E3,1],[N.E3,1],[N.F3,.5],[N.E3,.5],[N.E3,1],
+  [N.F3,1],[N.D3,1],[N.E3,1],[N.E3,1],
+  [N.C3,.5],[N.G3,.5],[N.C3,.5],[N.G3,.5],[N.C3,.5],[N.G3,.5],[N.C3,.5],[N.G3,.5],
+  [N.G2,.5],[N.D3,.5],[N.G2,.5],[N.D3,.5],[N.G2,1],[N.D3,1],
+  [N.C3,1],[N.G3,1],[N.E3,1],[N.G3,1],
+  [N.G2,1],[N.G2,1],[N.C3,1],[N.G3,1],
+  // Phrase D
+  [N.C3,1],[N.G3,1],[N.A3,1],[N.E3,1],
+  [N.F3,1],[N.C3,1],[N.G3,1],[N.G3,1],
+  [N.G3,1],[N.A3,1],[N.B3,1],[N.C3,1],
+  [N.F3,1],[N.E3,1],[N.D3,1],[N.C3,1],
+  [N.C3,.5],[N.G3,.5],[N.E3,.5],[N.G3,.5],[N.C3,.5],[N.G3,.5],[N.E3,.5],[N.C3,.5],
+  [N.A2,.5],[N.E3,.5],[N.C3,.5],[N.E3,.5],[N.A2,.5],[N.E3,.5],[N.C3,.5],[N.E3,.5],
+  [N.G2,.5],[N.D3,.5],[N.B2,.5],[N.D3,.5],[N.G2,.5],[N.D3,.5],[N.F3,.5],[N.G3,.5],
+  [N.C3,2],
 ];
 
 function initAudio(){
@@ -1201,32 +1231,44 @@ function initAudio(){
     if(!AC)return false;
     audioCtx=new AC();
     masterGain=audioCtx.createGain();
-    masterGain.gain.value=0.35;
+    masterGain.gain.value=0.3;
     masterGain.connect(audioCtx.destination);
     return true;
   }catch(e){return false;}
 }
 
-function schedOneNote(freq,startT,dur){
+function playNote(freq, startT, dur, type, gainPeak){
+  if(!freq)return; // rest
   const osc=audioCtx.createOscillator();
   const env=audioCtx.createGain();
-  osc.type='triangle';
+  osc.type=type;
   osc.frequency.value=freq;
   env.gain.setValueAtTime(0.001,startT);
-  env.gain.linearRampToValueAtTime(0.28,startT+0.02);
-  env.gain.setValueAtTime(0.22,startT+dur*0.65);
-  env.gain.exponentialRampToValueAtTime(0.001,startT+dur*0.92);
+  env.gain.linearRampToValueAtTime(gainPeak,startT+0.015);
+  env.gain.setValueAtTime(gainPeak*0.75,startT+dur*0.5);
+  env.gain.exponentialRampToValueAtTime(0.001,startT+dur*0.93);
   osc.connect(env);env.connect(masterGain);
-  osc.start(startT);osc.stop(startT+dur+0.05);
+  osc.start(startT);osc.stop(startT+dur+0.04);
 }
 
 function musicTick(){
   if(!musicPlaying||!audioCtx)return;
-  while(schedNextTime<audioCtx.currentTime+0.4){
-    const[freq,beats]=MSEQ[schedNoteIdx];
-    schedOneNote(freq,schedNextTime,beats*MBEAT);
-    schedNextTime+=beats*MBEAT;
-    schedNoteIdx=(schedNoteIdx+1)%MSEQ.length;
+  const ahead=audioCtx.currentTime+0.5;
+  // Schedule melody notes
+  while(melNext<ahead){
+    const[f,beats]=MEL[melIdx];
+    const dur=beats*B;
+    playNote(f,melNext,dur,'square',0.22);
+    melNext+=dur;
+    melIdx=(melIdx+1)%MEL.length;
+  }
+  // Schedule bass notes
+  while(bassNext<ahead){
+    const[f,beats]=BASS[bassIdx];
+    const dur=beats*B;
+    playNote(f,bassNext,dur,'sawtooth',0.14);
+    bassNext+=dur;
+    bassIdx=(bassIdx+1)%BASS.length;
   }
   schedTimer=setTimeout(musicTick,150);
 }
@@ -1239,23 +1281,24 @@ function toggleMusic(){
   const vb=document.getElementById('vol-bar');
   if(musicPlaying){
     btn.classList.add('playing');btn.textContent='🎶';
-    schedNoteIdx=0;
-    schedNextTime=audioCtx.currentTime+0.1;
+    melIdx=0;bassIdx=0;
+    melNext=audioCtx.currentTime+0.12;
+    bassNext=melNext;
     masterGain.gain.setValueAtTime(0.001,audioCtx.currentTime);
-    masterGain.gain.linearRampToValueAtTime(0.35,audioCtx.currentTime+0.5);
+    masterGain.gain.linearRampToValueAtTime(0.3,audioCtx.currentTime+0.4);
     musicTick();
     vb.style.display='flex';
   } else {
     btn.classList.remove('playing');btn.textContent='🎵';
     clearTimeout(schedTimer);
-    masterGain.gain.setTargetAtTime(0.001,audioCtx.currentTime,0.4);
-    setTimeout(()=>{if(!musicPlaying)masterGain.gain.value=0;},1800);
+    masterGain.gain.setTargetAtTime(0.001,audioCtx.currentTime,0.3);
+    setTimeout(()=>{if(!musicPlaying)masterGain.gain.value=0;},1500);
     vb.style.display='none';
   }
 }
 
 function setVolume(val){
-  if(masterGain&&musicPlaying)masterGain.gain.setTargetAtTime(val/285,audioCtx.currentTime,0.1);
+  if(masterGain&&musicPlaying)masterGain.gain.setTargetAtTime(val/330,audioCtx.currentTime,0.1);
 }
 
 // Auto-hide hint after 4s
